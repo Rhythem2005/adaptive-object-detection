@@ -1,0 +1,14 @@
+# Deep Learning & Object Detection
+ultralytics
+torch
+torchvision
+
+# Computer Vision & Video Processing
+opencv-python
+numpy
+
+# Metrics, Benchmarking & Utilities
+pandas
+matplotlib
+tqdm
+pyyaml
