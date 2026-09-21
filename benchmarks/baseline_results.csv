@@ -1,0 +1,4 @@
+video,resolution,native_fps,total_frames,total_time_s,avg_inference_ms,e2e_fps,avg_detections
+50.mp4,1280x720,29.97,510,9.419,18.14,54.14,9.06
+544.mp4,1280x720,29.97,300,5.418,17.71,55.37,7.12
+1600.mp4,1280x720,30.0,480,8.619,17.62,55.69,8.64
