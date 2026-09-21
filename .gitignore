@@ -41,3 +41,7 @@ data/outputs/*
 logs/*
 !logs/.gitkeep
 *.log
+
+# IDE files
+.vscode/
+.idea/
