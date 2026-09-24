@@ -1,0 +1,4 @@
+video,captured,consumed,replaced,total_inferences,avg_inference_ms,min_inference_ms,max_inference_ms,avg_frame_age_ms,min_frame_age_ms,max_frame_age_ms,avg_detections,inference_fps
+50.mp4,510,508,2,508,18.27,17.4,44.53,0.762,0.004,10.542,9.08,54.74
+544.mp4,300,298,2,298,18.7,17.38,39.63,0.875,0.005,26.031,7.11,53.49
+1600.mp4,480,478,2,478,17.86,17.28,37.42,0.749,0.005,22.698,8.63,55.99
