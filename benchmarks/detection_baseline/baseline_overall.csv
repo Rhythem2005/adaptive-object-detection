@@ -1,0 +1,2 @@
+n_images,total_gt,total_pred,total_tp,total_fp,total_fn,precision,recall,mAP50,avg_inference_ms
+425,6815,2811,1995,816,4820,0.7097,0.2927,0.2157,17.51

@@ -1,38 +1,31 @@
-"""Phase 5 Pre-requisite: Detection-Quality Baseline on BDD100K Val.
+"""Phase 5 Pre-requisite: Detection-Quality Baseline on BDD100K Val (N=425).
 
-Downloads a representative subset of the BDD100K 10K validation set
-(from HuggingFace: dgural/bdd100k), converts ground-truth annotations
-to YOLO format, runs YOLOv8n inference, and computes precision / recall /
-mAP — overall and broken down by object size (small / medium / large,
-using COCO size definitions).
+Evaluates plain YOLOv8n against 425 BDD100K validation set images on disk,
+scoped to the 7 road-scene categories defined in the research paper:
+    car, bus, truck, pedestrian, rider, bicycle, traffic light.
 
-The purpose is to establish a measurable baseline before Phase 5
-(confidence-guided re-detection) claims to improve small-object recall.
+Stated limitations / Class exclusions:
+    - BDD100K "traffic sign" (1,472 annotations in N=425) is EXCLUDED because
+      standard COCO-pretrained lightweight YOLO architectures (such as
+      YOLOv8n) lack an equivalent class representation.
+    - "motorcycle" (21 annotations) is EXCLUDED from the 7-class vocabulary.
+    - "other vehicle", "trailer", "train" are EXCLUDED.
 
-Class mapping:
-    BDD100K uses 13 object categories.  YOLOv8n is trained on COCO's
-    80 classes.  Only the 8 BDD100K categories that have a clear COCO
-    equivalent are evaluated:
-
-        BDD100K "car"          →  COCO "car" (id 2)
-        BDD100K "truck"        →  COCO "truck" (id 7)
-        BDD100K "bus"          →  COCO "bus" (id 5)
-        BDD100K "pedestrian"   →  COCO "person" (id 0)
-        BDD100K "rider"        →  COCO "person" (id 0)
-        BDD100K "bicycle"      →  COCO "bicycle" (id 1)
-        BDD100K "motorcycle"   →  COCO "motorcycle" (id 3)
-        BDD100K "traffic light" → COCO "traffic light" (id 9)
-
-    BDD100K "traffic sign", "train", "other vehicle", "trailer",
-    "other person" are excluded (no direct COCO match or too rare).
+Rider handling:
+    - BDD100K distinguishes "pedestrian" (walking) and "rider" (on bike/moto).
+    - COCO class 0 is "person" (encompassing both walking pedestrians and riders).
+    - In the standard 7-class evaluation, both "pedestrian" and "rider" map to
+      COCO class 0 ("person").
+    - This script also computes and reports sub-metrics for "pedestrian" vs "rider"
+      separately so the effect of this mapping is fully transparent.
 
 Size definitions (COCO standard, in pixels):
-    small:  area < 32²  = 1024
-    medium: 32² ≤ area < 96² = 9216
+    small:  area < 32²  = 1024 px²
+    medium: 32² ≤ area < 96² = 9216 px²
     large:  area ≥ 96²
 
 Usage:
-    .venv/bin/python benchmarks/detection_baseline.py [--n-images 500]
+    .venv/bin/python benchmarks/detection_baseline.py [--n-images 425]
 """
 
 import argparse
@@ -55,27 +48,33 @@ from config import MODEL_PATH, CONFIDENCE_THRESHOLD
 # Constants
 # ---------------------------------------------------------------------------
 
-# BDD100K label → COCO class id mapping (YOLOv8n class indices)
+# 7-Class paper vocabulary mapping: BDD100K label -> COCO class id (YOLOv8n)
 BDD_TO_COCO = {
     "car":           2,
     "truck":         7,
     "bus":           5,
     "pedestrian":    0,
-    "rider":         0,   # closest COCO class
+    "rider":         0,   # mapped to person (flagged explicitly)
     "bicycle":       1,
-    "motorcycle":    3,
-    "traffic light":  9,
+    "traffic light": 9,
 }
 
-# COCO class names for the mapped subset
-COCO_NAMES = {0: "person", 1: "bicycle", 2: "car", 3: "motorcycle",
-              5: "bus", 7: "truck", 9: "traffic light"}
+# Evaluated COCO classes (6 heads covering the 7 BDD categories)
+COCO_NAMES = {
+    0: "person",
+    1: "bicycle",
+    2: "car",
+    5: "bus",
+    7: "truck",
+    9: "traffic light",
+}
 
 # COCO-style size thresholds (pixels²)
 SMALL_AREA  = 32 * 32    # 1024
 MEDIUM_AREA = 96 * 96    # 9216
 
 BASELINE_DIR = os.path.join("benchmarks", "detection_baseline")
+DEFAULT_IMAGE_DIR = os.path.join(BASELINE_DIR, "images")
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -112,13 +111,10 @@ def compute_ap(precisions, recalls):
     """Compute AP using 101-point interpolation (COCO style)."""
     if len(precisions) == 0:
         return 0.0
-    # Prepend sentinel values
     prec = np.concatenate(([1.0], precisions, [0.0]))
     rec = np.concatenate(([0.0], recalls, [1.0]))
-    # Make precision monotonically decreasing
     for i in range(len(prec) - 2, -1, -1):
         prec[i] = max(prec[i], prec[i + 1])
-    # 101-point interpolation
     ap = 0.0
     for t in np.linspace(0, 1, 101):
         mask = rec >= t
@@ -131,19 +127,32 @@ def compute_ap(precisions, recalls):
 # Data loading
 # ---------------------------------------------------------------------------
 
-def load_annotations(samples_json_path, n_images=None, seed=42):
-    """Load BDD100K annotations from FiftyOne samples.json.
+def load_annotations(samples_json_path, image_dir=None, n_images=None, seed=42):
+    """Load BDD100K annotations from FiftyOne samples.json for available images.
 
     Returns:
-        list of dicts: [{filepath, gt_boxes: [(class_id, x1, y1, x2, y2)], ...}, ...]
+        list of dicts: [{filepath, gt_boxes: [(class_id, x1, y1, x2, y2, orig_label)], ...}, ...]
     """
     with open(samples_json_path) as f:
         data = json.load(f)
 
     samples = data["samples"]
-    rng = np.random.RandomState(seed)
+
+    # Filter to images existing in image_dir if specified
+    if image_dir and os.path.exists(image_dir):
+        local_files = set(os.listdir(image_dir))
+        matched = []
+        for s in samples:
+            fname = os.path.basename(s["filepath"])
+            if fname in local_files:
+                s_copy = dict(s)
+                s_copy["filepath"] = os.path.join(image_dir, fname)
+                matched.append(s_copy)
+        samples = matched
+        print(f"  Matched {len(samples)} local images in {image_dir}")
 
     if n_images and n_images < len(samples):
+        rng = np.random.RandomState(seed)
         indices = rng.choice(len(samples), n_images, replace=False)
         samples = [samples[i] for i in sorted(indices)]
 
@@ -153,7 +162,7 @@ def load_annotations(samples_json_path, n_images=None, seed=42):
     mapped_gt = 0
 
     for s in samples:
-        filepath = s["filepath"]  # relative: "data/xxxxx.jpg"
+        filepath = s["filepath"]
         w = s["metadata"]["width"]
         h = s["metadata"]["height"]
 
@@ -168,13 +177,12 @@ def load_annotations(samples_json_path, n_images=None, seed=42):
                     continue
                 mapped_gt += 1
                 coco_id = BDD_TO_COCO[label]
-                # FiftyOne bbox: [x_rel, y_rel, w_rel, h_rel]
                 bx, by, bw, bh = d["bounding_box"]
                 x1 = bx * w
                 y1 = by * h
                 x2 = (bx + bw) * w
                 y2 = (by + bh) * h
-                gt_boxes.append((coco_id, x1, y1, x2, y2))
+                gt_boxes.append((coco_id, x1, y1, x2, y2, label))
 
         results.append({
             "filepath": filepath,
@@ -184,47 +192,15 @@ def load_annotations(samples_json_path, n_images=None, seed=42):
                          else s.get("timeofday", "unknown"),
         })
 
-    print(f"  Loaded {len(results)} images, {mapped_gt} mapped GT boxes "
-          f"({total_gt} total, {total_gt - mapped_gt} skipped)")
-    if skipped_cats:
-        print(f"  Skipped categories: {dict(skipped_cats)}")
+    print(f"  Loaded {len(results)} images (N={len(results)})")
+    print(f"  Mapped GT boxes   : {mapped_gt}")
+    print(f"  Excluded GT boxes : {total_gt - mapped_gt} (Total: {total_gt})")
+    print(f"  Exclusion breakdown:")
+    for cat, count in skipped_cats.most_common():
+        reason = "COCO lack equivalent class" if cat == "traffic sign" else "not in 7-class paper vocabulary"
+        print(f"    - {cat:<15}: {count:>5} ({reason})")
 
     return results
-
-
-def download_images(samples, hf_repo="dgural/bdd100k", dest_dir=None):
-    """Download images from HuggingFace Hub.
-
-    Returns updated samples with absolute filepaths.
-    """
-    from huggingface_hub import hf_hub_download
-
-    if dest_dir is None:
-        dest_dir = os.path.join(BASELINE_DIR, "images")
-    os.makedirs(dest_dir, exist_ok=True)
-
-    updated = []
-    for i, s in enumerate(samples):
-        rel_path = s["filepath"]  # e.g., "data/b1c66a42-6f7d68ca.jpg"
-        local_name = os.path.basename(rel_path)
-        local_path = os.path.join(dest_dir, local_name)
-
-        if not os.path.exists(local_path):
-            # Download from HuggingFace
-            cached = hf_hub_download(hf_repo, rel_path, repo_type="dataset")
-            # Copy/link to our directory
-            import shutil
-            shutil.copy2(cached, local_path)
-
-        s_copy = dict(s)
-        s_copy["filepath"] = local_path
-        updated.append(s_copy)
-
-        if (i + 1) % 50 == 0:
-            print(f"    Downloaded {i + 1}/{len(samples)} images...")
-
-    print(f"  All {len(updated)} images ready at {dest_dir}")
-    return updated
 
 
 # ---------------------------------------------------------------------------
@@ -232,11 +208,7 @@ def download_images(samples, hf_repo="dgural/bdd100k", dest_dir=None):
 # ---------------------------------------------------------------------------
 
 def run_evaluation(samples, model_path, conf_threshold, iou_threshold=0.5):
-    """Run YOLOv8n on images and compute per-class, per-size metrics.
-
-    Returns:
-        dict with overall and per-class and per-size metrics.
-    """
+    """Run YOLOv8n on images and compute per-class, per-size, and sub-label metrics."""
     from ultralytics import YOLO
 
     model = YOLO(model_path)
@@ -245,16 +217,15 @@ def run_evaluation(samples, model_path, conf_threshold, iou_threshold=0.5):
     dummy = np.zeros((720, 1280, 3), dtype=np.uint8)
     model.predict(source=dummy, conf=conf_threshold, verbose=False, save=False)
 
-    # Accumulators: for each (class_id, size_bucket), track TP/FP/FN
-    # We'll compute AP properly by collecting all predictions with scores
     all_predictions = []  # (image_idx, class_id, confidence, x1, y1, x2, y2)
-    all_gt = []           # (image_idx, class_id, x1, y1, x2, y2, size_bucket)
+    all_gt = []           # (image_idx, class_id, x1, y1, x2, y2, size_bucket, orig_label)
 
     mapped_coco_ids = set(COCO_NAMES.keys())
 
     total_inference_ms = 0.0
     total_frames = 0
 
+    print("  Running YOLOv8n inference...")
     for img_idx, sample in enumerate(samples):
         img = cv2.imread(sample["filepath"])
         if img is None:
@@ -271,12 +242,12 @@ def run_evaluation(samples, model_path, conf_threshold, iou_threshold=0.5):
 
         # Collect ground truth
         for gt in sample["gt_boxes"]:
-            cls_id, x1, y1, x2, y2 = gt
+            cls_id, x1, y1, x2, y2, orig_label = gt
             area = box_area_px((x1, y1, x2, y2))
             sb = size_bucket(area)
-            all_gt.append((img_idx, cls_id, x1, y1, x2, y2, sb))
+            all_gt.append((img_idx, cls_id, x1, y1, x2, y2, sb, orig_label))
 
-        # Collect predictions (only for mapped classes)
+        # Collect predictions (only for mapped classes in the 7-class scope)
         if results and len(results) > 0:
             boxes = results[0].boxes
             for box in boxes:
@@ -289,8 +260,8 @@ def run_evaluation(samples, model_path, conf_threshold, iou_threshold=0.5):
                     (img_idx, cls_id, conf, xyxy[0], xyxy[1], xyxy[2], xyxy[3])
                 )
 
-        if (img_idx + 1) % 50 == 0:
-            print(f"    Processed {img_idx + 1}/{len(samples)} images...")
+        if (img_idx + 1) % 50 == 0 or (img_idx + 1) == len(samples):
+            print(f"    Evaluated {img_idx + 1}/{len(samples)} images...")
 
     avg_inference = total_inference_ms / total_frames if total_frames > 0 else 0
 
@@ -298,18 +269,15 @@ def run_evaluation(samples, model_path, conf_threshold, iou_threshold=0.5):
     # Compute metrics per class and per size
     # -----------------------------------------------------------------------
 
-    # Group GT by (image_idx, class_id)
     gt_by_img_cls = defaultdict(list)
     for gt in all_gt:
-        img_idx, cls_id, x1, y1, x2, y2, sb = gt
+        img_idx, cls_id, x1, y1, x2, y2, sb, orig_label = gt
         gt_by_img_cls[(img_idx, cls_id)].append({
-            "box": (x1, y1, x2, y2), "matched": False, "size": sb
+            "box": (x1, y1, x2, y2), "matched": False, "size": sb, "orig_label": orig_label
         })
 
-    # Sort predictions by confidence (descending) for AP computation
     all_predictions.sort(key=lambda x: -x[2])
 
-    # Per-class AP computation
     results_by_class = {}
     results_by_size = {"small": {"tp": 0, "fp": 0, "fn": 0},
                        "medium": {"tp": 0, "fp": 0, "fn": 0},
@@ -323,7 +291,6 @@ def run_evaluation(samples, model_path, conf_threshold, iou_threshold=0.5):
         if cls_gt_count == 0 and len(cls_preds) == 0:
             continue
 
-        # Reset matched flags
         for key in gt_by_img_cls:
             if key[1] == cls_id:
                 for g in gt_by_img_cls[key]:
@@ -379,7 +346,7 @@ def run_evaluation(samples, model_path, conf_threshold, iou_threshold=0.5):
             "ap50": round(ap, 4),
         }
 
-    # Per-size metrics: count matched/unmatched GT by size
+    # Per-size metrics
     for key in gt_by_img_cls:
         for g in gt_by_img_cls[key]:
             sb = g["size"]
@@ -388,10 +355,7 @@ def run_evaluation(samples, model_path, conf_threshold, iou_threshold=0.5):
             else:
                 results_by_size[sb]["fn"] += 1
 
-    # FP by size — attribute FP to size of the prediction box
     fp_by_size = {"small": 0, "medium": 0, "large": 0}
-    pred_idx = 0
-    # Re-sort and re-process for FP size attribution
     for pred in all_predictions:
         img_idx, cls_id, conf, px1, py1, px2, py2 = pred
         if cls_id not in mapped_coco_ids:
@@ -414,6 +378,39 @@ def run_evaluation(samples, model_path, conf_threshold, iou_threshold=0.5):
         fn = results_by_size[sb]["fn"]
         results_by_size[sb]["precision"] = round(tp / (tp + fp), 4) if (tp + fp) > 0 else 0
         results_by_size[sb]["recall"] = round(tp / (tp + fn), 4) if (tp + fn) > 0 else 0
+
+    # Sub-breakdown for pedestrian vs rider under person class (cls_id 0)
+    pedestrian_gt = 0
+    pedestrian_tp = 0
+    rider_gt = 0
+    rider_tp = 0
+
+    for key in gt_by_img_cls:
+        if key[1] == 0:  # person
+            for g in gt_by_img_cls[key]:
+                if g["orig_label"] == "pedestrian":
+                    pedestrian_gt += 1
+                    if g["matched"]:
+                        pedestrian_tp += 1
+                elif g["orig_label"] == "rider":
+                    rider_gt += 1
+                    if g["matched"]:
+                        rider_tp += 1
+
+    person_breakdown = {
+        "pedestrian": {
+            "gt": pedestrian_gt,
+            "tp": pedestrian_tp,
+            "fn": pedestrian_gt - pedestrian_tp,
+            "recall": round(pedestrian_tp / pedestrian_gt, 4) if pedestrian_gt > 0 else 0.0,
+        },
+        "rider": {
+            "gt": rider_gt,
+            "tp": rider_tp,
+            "fn": rider_gt - rider_tp,
+            "recall": round(rider_tp / rider_gt, 4) if rider_gt > 0 else 0.0,
+        },
+    }
 
     # Overall
     total_tp = sum(r["tp"] for r in results_by_class.values())
@@ -439,6 +436,7 @@ def run_evaluation(samples, model_path, conf_threshold, iou_threshold=0.5):
         "overall": overall,
         "by_class": results_by_class,
         "by_size": results_by_size,
+        "person_breakdown": person_breakdown,
     }
 
 
@@ -450,21 +448,23 @@ def print_results(results):
     overall = results["overall"]
     by_class = results["by_class"]
     by_size = results["by_size"]
+    pb = results["person_breakdown"]
 
     print()
-    print("=" * 70)
-    print("  YOLOv8n Detection Baseline on BDD100K Val")
-    print("=" * 70)
+    print("=" * 78)
+    print("  YOLOv8n Ground-Truth Baseline Results (BDD100K Val, N=425)")
+    print("=" * 78)
     print()
-    print(f"  Images evaluated   : {overall['n_images']}")
+    print(f"  Dataset split      : BDD100K 10K val subset (N=425 images)")
+    print(f"  Scope              : 7 categories (traffic sign excluded)")
     print(f"  Total GT boxes     : {overall['total_gt']}")
     print(f"  Total predictions  : {overall['total_pred']}")
     print(f"  True positives     : {overall['total_tp']}")
     print(f"  False positives    : {overall['total_fp']}")
     print(f"  False negatives    : {overall['total_fn']}")
-    print(f"  Precision          : {overall['precision']:.4f}")
-    print(f"  Recall             : {overall['recall']:.4f}")
-    print(f"  mAP@0.5            : {overall['mAP50']:.4f}")
+    print(f"  Precision          : {overall['precision']:.4f} ({overall['precision']*100:.2f}%)")
+    print(f"  Recall             : {overall['recall']:.4f} ({overall['recall']*100:.2f}%)")
+    print(f"  mAP@0.5            : {overall['mAP50']:.4f} ({overall['mAP50']*100:.2f}%)")
     print(f"  Avg inference      : {overall['avg_inference_ms']:.2f} ms")
     print()
 
@@ -479,12 +479,25 @@ def print_results(results):
               f"{r['precision']:>8.4f} {r['recall']:>8.4f} {r['ap50']:>8.4f}")
     print()
 
-    print("  Per-Size Results (COCO size definitions):")
-    print(f"  {'Size':<10} {'TP':>6} {'FP':>6} {'FN':>6} {'Prec':>8} {'Recall':>8}")
-    print("  " + "-" * 52)
+    print("  Rider Mapping Analysis (under 'person' class):")
+    print(f"  {'Category':<16} {'GT':>6} {'TP':>6} {'FN':>6} {'Recall':>8}")
+    print("  " + "-" * 48)
+    print(f"  {'pedestrian':<16} {pb['pedestrian']['gt']:>6} {pb['pedestrian']['tp']:>6} "
+          f"{pb['pedestrian']['fn']:>6} {pb['pedestrian']['recall']:>8.4f}")
+    print(f"  {'rider':<16} {pb['rider']['gt']:>6} {pb['rider']['tp']:>6} "
+          f"{pb['rider']['fn']:>6} {pb['rider']['recall']:>8.4f}")
+    print(f"  {'combined person':<16} {by_class[0]['gt_count']:>6} {by_class[0]['tp']:>6} "
+          f"{by_class[0]['fn']:>6} {by_class[0]['recall']:>8.4f}")
+    print()
+
+    print("  Per-Size Results (COCO area definitions):")
+    print(f"  {'Size Bucket':<14} {'Pixel Area':<16} {'GT (TP+FN)':>10} {'TP':>6} {'FP':>6} {'FN':>6} {'Prec':>8} {'Recall':>8}")
+    print("  " + "-" * 82)
+    areas = {"small": "area < 32²", "medium": "32² ≤ area < 96²", "large": "area ≥ 96²"}
     for sb in ["small", "medium", "large"]:
         r = by_size[sb]
-        print(f"  {sb:<10} {r['tp']:>6} {r['fp']:>6} {r['fn']:>6} "
+        gt_size = r["tp"] + r["fn"]
+        print(f"  {sb:<14} {areas[sb]:<16} {gt_size:>10} {r['tp']:>6} {r['fp']:>6} {r['fn']:>6} "
               f"{r['precision']:>8.4f} {r['recall']:>8.4f}")
     print()
 
@@ -518,6 +531,15 @@ def save_results(results, output_dir):
             row = {"size": sb, **results["by_size"][sb]}
             w.writerow(row)
 
+    # Rider breakdown
+    pb_path = os.path.join(output_dir, "baseline_pedestrian_rider.csv")
+    with open(pb_path, "w", newline="") as f:
+        fieldnames = ["category", "gt", "tp", "fn", "recall"]
+        w = csv.DictWriter(f, fieldnames=fieldnames)
+        w.writeheader()
+        for cat in ["pedestrian", "rider"]:
+            w.writerow({"category": cat, **results["person_breakdown"][cat]})
+
     print(f"  Results saved to {output_dir}/")
 
 
@@ -526,24 +548,27 @@ def save_results(results, output_dir):
 # ---------------------------------------------------------------------------
 
 def main():
-    parser = argparse.ArgumentParser(description="YOLOv8n detection baseline on BDD100K val")
-    parser.add_argument("--n-images", type=int, default=500,
-                        help="Number of validation images to evaluate (default: 500)")
+    parser = argparse.ArgumentParser(description="YOLOv8n detection baseline on BDD100K val (N=425)")
+    parser.add_argument("--image-dir", type=str, default=DEFAULT_IMAGE_DIR,
+                        help=f"Directory of validation images (default: {DEFAULT_IMAGE_DIR})")
+    parser.add_argument("--n-images", type=int, default=425,
+                        help="Number of validation images to evaluate (default: 425)")
     parser.add_argument("--seed", type=int, default=42,
                         help="Random seed for image selection (default: 42)")
     args = parser.parse_args()
 
-    print("=" * 70)
-    print("Phase 5 Pre-requisite: Detection-Quality Baseline")
-    print("=" * 70)
+    print("=" * 78)
+    print("Phase 5 Pre-requisite: Plain YOLOv8n Ground-Truth Baseline (N=425)")
+    print("=" * 78)
     print()
-    print(f"  Model: {MODEL_PATH}")
+    print(f"  Model               : {MODEL_PATH}")
     print(f"  Confidence threshold: {CONFIDENCE_THRESHOLD}")
-    print(f"  Images to evaluate: {args.n_images}")
-    print(f"  IoU threshold: 0.5")
+    print(f"  Target sample size  : N={args.n_images}")
+    print(f"  Image directory     : {args.image_dir}")
+    print(f"  IoU threshold       : 0.5")
     print()
 
-    # Step 1: Load annotations
+    # Step 1: Locate annotations
     samples_json = os.path.join(
         os.path.expanduser("~"),
         ".cache/huggingface/hub/datasets--dgural--bdd100k/"
@@ -551,39 +576,30 @@ def main():
     )
 
     if not os.path.exists(samples_json):
-        print("  [INFO] Downloading BDD100K val annotations from HuggingFace...")
-        from huggingface_hub import hf_hub_download
-        samples_json = hf_hub_download("dgural/bdd100k", "samples.json",
-                                        repo_type="dataset")
+        print(f"  [ERROR] Cannot find annotations at {samples_json}")
+        sys.exit(1)
 
     print("  Loading annotations...")
-    samples = load_annotations(samples_json, n_images=args.n_images, seed=args.seed)
+    samples = load_annotations(samples_json, image_dir=args.image_dir, n_images=args.n_images, seed=args.seed)
 
-    # Step 2: Download images
-    print("  Downloading images...")
-    samples = download_images(samples)
+    if len(samples) == 0:
+        print(f"  [ERROR] No images found in {args.image_dir}")
+        sys.exit(1)
 
-    # Step 3: Run evaluation
-    print("  Running YOLOv8n inference + evaluation...")
+    # Step 2: Run evaluation
     results = run_evaluation(samples, MODEL_PATH, CONFIDENCE_THRESHOLD)
 
-    # Step 4: Print and save
+    # Step 3: Print and save
     print_results(results)
     save_results(results, BASELINE_DIR)
 
-    # Step 5: Flag mismatch
     print()
-    print("  --- Dataset Mismatch Note ---")
-    print("  Speed benchmarks (Phase 3/4) used: 50.mp4, 544.mp4, 1600.mp4")
-    print("  CLAHE validation used: 621.mp4 (night), 139.mp4 (dusk)")
-    print("  Detection baseline uses: BDD100K val images (10K official split)")
-    print("  These are DIFFERENT data sources:")
-    print("    - Videos: sequential frames from BDD100K video subset (Kaggle)")
-    print("    - Val images: BDD100K's official 10K labeled still images")
-    print("  The video dataset has no ground-truth detection labels, so")
-    print("  the detection baseline necessarily uses a different data split.")
-    print("  Both are from BDD100K and share the same domain (US road scenes),")
-    print("  so the baseline is representative even though not frame-identical.")
+    print("  --- Evaluation Scope Summary ---")
+    print("  - Evaluated dataset: BDD100K 10K val split, N=425 still images on disk")
+    print("  - 7 Categories evaluated: car, bus, truck, pedestrian, rider, bicycle, traffic light")
+    print("  - Traffic sign (1,472 annotations) explicitly excluded (COCO model lacks class)")
+    print("  - Rider (35 annotations) mapped to COCO person head; pedestrian (581) also mapped to person")
+    print("  - Metrics established as ground truth baseline for Phase 5 small-object comparisons.")
     print()
 
 
