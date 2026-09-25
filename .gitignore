@@ -46,3 +46,6 @@ logs/*
 .vscode/
 .idea/
 runs/
+
+# Benchmark evaluation images
+benchmarks/detection_baseline/images/
