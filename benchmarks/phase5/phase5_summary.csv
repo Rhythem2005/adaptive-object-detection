@@ -1,0 +1,4 @@
+video,captured,consumed,replaced,drop_rate_pct,avg_primary_ms,avg_candidates,avg_rois,avg_redetect_ms,avg_fusion_ms,avg_total_detection_ms,avg_frame_age_ms,avg_detections,e2e_fps
+50.mp4,510,241,269,52.75,17.85,6.67,3.44,60.16,0.058,78.2,18.796,10.35,12.79
+544.mp4,300,176,124,41.33,17.91,3.18,1.9,44.57,0.049,62.63,19.136,8.71,15.97
+1600.mp4,480,233,247,51.46,17.78,3.77,2.64,57.64,0.033,75.57,17.513,9.04,13.23
