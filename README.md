@@ -225,18 +225,11 @@ adaptive-vision/
 ├── requirements.txt                    # Project runtime dependencies
 │
 ├── benchmarks/
-│   ├── detection_baseline/             # Ground-truth evaluation outputs (CSV reports)
-│   │   ├── baseline_overall.csv        # Overall GT precision, recall, mAP@0.5
-│   │   ├── baseline_per_class.csv      # Per-class detection and AP metrics
-│   │   ├── baseline_per_size.csv       # Small, medium, large recall breakdowns
-│   │   ├── baseline_pedestrian_rider.csv
-│   │   └── images/                     # 425 local BDD100K validation images (git-ignored)
 │   ├── detection_baseline.py           # Ground-truth baseline evaluation script (N=425)
 │   ├── phase3/                         # Phase 3 baseline benchmark telemetry CSVs
 │   ├── phase4/                         # Phase 4 environmental adaptation telemetry CSVs
 │   ├── phase5/                         # Phase 5 selective re-detection telemetry CSVs
 │   ├── validate_phase4.py              # Phase 4 validation suite
-│   ├── validate_phase4_delta.py        # Isolated illumination timing delta analysis
 │   └── validate_phase5.py              # Phase 5 validation suite & unit tests
 │
 ├── data/
@@ -251,7 +244,6 @@ adaptive-vision/
 │   ├── __init__.py                     # Package export declarations
 │   ├── capture.py                      # Multi-threaded continuous frame capture worker
 │   ├── detector.py                     # Primary YOLOv8n detector initialization and inference
-│   ├── download_dataset.py             # Dataset acquisition helper
 │   ├── frame_manager.py                # Thread-safe FreshFrameBuffer (capacity = 1)
 │   ├── illumination.py                 # Environmental illumination estimation & CLAHE
 │   ├── metrics.py                      # Frame age, latency, and throughput telemetry
@@ -333,7 +325,7 @@ The final core algorithmic phase will integrate inter-frame **Temporal Tracking*
 ## 10. Repository Hygiene & Git Policies
 
 To ensure a lightweight and clean version history:
-- **No Large Media:** Video sequences under `data/` and `data/dev_videos/` are strictly git-ignored.
-- **No Baseline Evaluation Images:** The 425 local validation scenes under `benchmarks/detection_baseline/images/` are git-ignored.
+- **No Large Media or Photos:** Video sequences (`*.mp4`, etc.) under `data/` and all photos/images globally (`*.jpg`, `*.png`, `*.jpeg`) are strictly git-ignored.
+- **No Baseline Evaluation Images:** The local validation scenes under `benchmarks/historical/old_425_image_evaluation/images/` are git-ignored.
 - **No Model Weights:** Model checkpoints in `weights/` (`*.pt`, `*.onnx`, etc.) remain local.
 - **No Temporary Run Artifacts:** Generated debug frames and caches are excluded.

@@ -48,4 +48,8 @@ logs/*
 runs/
 
 # Benchmark evaluation images
-benchmarks/detection_baseline/images/
+benchmarks/historical/old_425_image_evaluation/images/
+*.jpg
+*.jpeg
+*.png
+*.pt
