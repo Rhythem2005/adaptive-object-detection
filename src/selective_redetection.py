@@ -47,6 +47,7 @@ from typing import Dict, List, Tuple, Any
 
 import cv2
 import numpy as np
+import config
 
 
 def compute_box_iou(box_a: np.ndarray, box_b: np.ndarray) -> float:
@@ -278,7 +279,7 @@ def redetect_rois(
             continue
 
         # Single-crop forward pass through YOLO
-        results, _ = detector.detect(crop)
+        results, _ = detector.detect(crop, imgsz=config.RE_DETECT_IMGSZ)
 
         if results and len(results[0].boxes) > 0:
             for cbox in results[0].boxes:

@@ -60,8 +60,11 @@ ROI_CONTEXT_MARGIN = 1.0
 # Minimum ROI dimension (pixels) to avoid feature collapse on sub-32px boxes.
 ROI_MIN_SIZE = 64
 
+# Re-detection input resolution.
+RE_DETECT_IMGSZ = 320
+
 # Maximum ROIs per frame to keep real-time latency bounded on edge hardware.
-MAX_ROIS_PER_FRAME = 4
+MAX_ROIS_PER_FRAME = 2
 
 # IoU threshold for class-aware NMS fusion (paper: "class-aware Non-Maximum
 # Suppression (NMS) deduplicates the aggregated pool").

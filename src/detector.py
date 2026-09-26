@@ -21,11 +21,12 @@ class YOLODetector:
         self.model = YOLO(model_path)
         self.conf_threshold = conf_threshold
 
-    def detect(self, frame):
+    def detect(self, frame, **kwargs):
         """Run inference on a single frame.
 
         Args:
             frame: numpy array (BGR image).
+            **kwargs: Additional arguments to pass to model.predict (e.g. imgsz).
 
         Returns:
             tuple: (results, inference_ms)
@@ -33,12 +34,16 @@ class YOLODetector:
                 - inference_ms: float, wall-clock inference time in milliseconds
         """
         t0 = time.perf_counter()
-        results = self.model.predict(
-            source=frame,
-            conf=self.conf_threshold,
-            verbose=False,
-            save=False,
-        )
+        
+        predict_kwargs = {
+            "source": frame,
+            "conf": self.conf_threshold,
+            "verbose": False,
+            "save": False,
+        }
+        predict_kwargs.update(kwargs)
+        
+        results = self.model.predict(**predict_kwargs)
         t1 = time.perf_counter()
 
         inference_ms = (t1 - t0) * 1000.0
