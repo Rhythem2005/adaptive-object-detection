@@ -1,0 +1,6 @@
+video,condition,captured,consumed,replaced,drop_rate_pct,frames_processed,wall_time_s,e2e_fps,avg_detection_ms,avg_tracking_ms,avg_pipeline_ms,avg_frame_age_ms,max_frame_age_ms,avg_dets_per_frame,avg_active_tracks,avg_confirmed_tracks,total_matched,total_unmatched_det,total_unmatched_trk,total_created,total_terminated,unique_track_ids,mean_track_age,max_track_age,mean_track_length
+50.mp4,day,510,225,285,55.88,225,19.479,11.88,82.4,1.743,84.14,20.914,63.479,10.54,75.37,7.36,1908,464,14963,464,376,464,24.71,225,10.33
+544.mp4,day,300,163,137,45.67,163,11.438,14.75,66.98,0.841,67.82,18.765,42.442,8.72,39.37,7.18,1270,151,5116,151,120,151,27.36,130,16.94
+1600.mp4,day,480,213,267,55.62,213,18.069,12.2,80.94,1.046,81.99,18.737,39.718,9.18,45.77,7.29,1707,248,8008,248,214,248,25.38,165,17.24
+621.mp4,night,300,146,154,51.33,146,11.386,14.56,68.27,0.393,68.66,19.089,37.976,3.28,23.4,2.16,368,111,3014,111,77,111,19.03,100,6.79
+139.mp4,night,300,109,191,63.67,109,11.356,10.28,96.06,1.251,97.31,18.296,54.246,8.17,62.29,5.34,685,205,6055,205,155,205,21.25,109,8.18

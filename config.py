@@ -67,7 +67,26 @@ MAX_ROIS_PER_FRAME = 4
 # Suppression (NMS) deduplicates the aggregated pool").
 FUSION_NMS_IOU = 0.50
 
+# ── Phase 6: Temporal Tracking (Kalman + Hungarian) ─────────────────────────
+# SORT-family tracker operating on post-NMS detections.
+# Reference: Bewley et al., "Simple Online and Realtime Tracking", ICIP 2016.
+#
+# IoU threshold for detection-to-track association (SORT default: 0.3).
+# Pairs with IoU below this are rejected even if Hungarian assigns them.
+TRACKER_IOU_THRESHOLD = 0.3
+
+# Maximum consecutive frames a track survives without a matched detection
+# before termination (SORT default: 1, but 30 is common for variable-FPS
+# pipelines; at ~14 FPS effective rate, 30 ≈ ~2.1 seconds tolerance).
+TRACKER_MAX_AGE = 30
+
+# Minimum consecutive hits (matched detections) before a track is reported
+# as confirmed output (SORT default: 3). Suppresses spurious single-frame
+# false positives from appearing in tracking output.
+TRACKER_MIN_HITS = 3
+
 # ── Output ──────────────────────────────────────────────────────────────────
 PHASE3_RESULTS_DIR = os.path.join("benchmarks", "phase3")
 PHASE4_RESULTS_DIR = os.path.join("benchmarks", "phase4")
 PHASE5_RESULTS_DIR = os.path.join("benchmarks", "phase5")
+PHASE6_RESULTS_DIR = os.path.join("benchmarks", "phase6")

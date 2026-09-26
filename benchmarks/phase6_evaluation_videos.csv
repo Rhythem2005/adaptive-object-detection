@@ -1,0 +1,21 @@
+video,condition,path,selection_reason
+50.mp4,day,data/bdd100k/videos_by_condition/day/50.mp4,Core Phase 3-5 daytime urban baseline; dense vehicle traffic at standard 30 FPS
+544.mp4,day,data/bdd100k/videos_by_condition/day/544.mp4,Core Phase 3-5 daytime suburban baseline; mixed pedestrian and cyclist presence
+1600.mp4,day,data/bdd100k/videos_by_condition/day/1600.mp4,Core Phase 3-5 daytime highway/overpass baseline; open multilane vehicle traffic
+100.mp4,day,data/bdd100k/videos_by_condition/day/100.mp4,"High-frame-rate daytime sequence (59.94 FPS, 600 frames); tests high-frequency temporal tracking"
+1127.mp4,day,data/bdd100k/videos_by_condition/day/1127.mp4,"Extended-duration and high-frame-rate daytime clip (59.94 FPS, 1379 frames, 23.01s); tests long-term tracking continuity and drift resistance"
+513.mp4,evening_low_light,data/bdd100k/videos_by_condition/evening_low_light/513.mp4,"Early transitional low-light sequence with high ambient illumination (mean L=97.24, 20.0% low-light)"
+976.mp4,evening_low_light,data/bdd100k/videos_by_condition/evening_low_light/976.mp4,"Moderate dusk transitional scene with evening sky and shadow contrast (mean L=50.72, 23.3% low-light)"
+1348.mp4,evening_low_light,data/bdd100k/videos_by_condition/evening_low_light/1348.mp4,"Dense transitional dusk sequence under vehicle headlight illumination (mean L=42.26, 60.0% low-light)"
+1451.mp4,evening_low_light,data/bdd100k/videos_by_condition/evening_low_light/1451.mp4,"Transitional roadway sequence with fading daylight (mean L=55.22, 16.7% low-light)"
+1760.mp4,evening_low_light,data/bdd100k/videos_by_condition/evening_low_light/1760.mp4,"High-frame-rate transitional low-light sequence (59.94 FPS, 600 frames, mean L=38.72, 80.0% low-light)"
+621.mp4,night,data/bdd100k/videos_by_condition/night/621.mp4,"Core Phase 4-5 nighttime benchmark; dark roadway with vehicle headlights and streetlights (mean L=29.14, 100% low-light)"
+139.mp4,night,data/bdd100k/videos_by_condition/night/139.mp4,"Core Phase 4-5 mixed/flicker benchmark; fluctuating illumination across underpass/roadway lighting (mean L=41.13, 66.7% low-light)"
+105.mp4,night,data/bdd100k/videos_by_condition/night/105.mp4,"Standard nighttime urban driving sequence with street reflections (mean L=38.69, 100% low-light)"
+250.mp4,night,data/bdd100k/videos_by_condition/night/250.mp4,"Urban night scene with commercial lighting, mixed pedestrian and vehicle presence (mean L=40.67, 63.3% low-light)"
+262.mp4,night,data/bdd100k/videos_by_condition/night/262.mp4,"High-frame-rate nighttime driving sequence (60.00 FPS, 600 frames, mean L=21.78, 100% low-light)"
+812.mp4,night,data/bdd100k/videos_by_condition/night/812.mp4,"High-frame-rate nighttime arterial road sequence (59.94 FPS, 600 frames, mean L=32.94, 100% low-light)"
+1695.mp4,night,data/bdd100k/videos_by_condition/night/1695.mp4,"Night arterial roadway with oncoming vehicle headlight glare (mean L=52.62, 43.3% low-light)"
+1813.mp4,night,data/bdd100k/videos_by_condition/night/1813.mp4,"Longest duration nighttime sequence (21.02s, 630 frames, mean L=32.93, 100% low-light); tests extended track retention"
+1905.mp4,night,data/bdd100k/videos_by_condition/night/1905.mp4,"Low-ambient-light unlit roadway scene (mean L=20.28, 100% low-light); tests tracking under extreme contrast degradation"
+1918.mp4,night,data/bdd100k/videos_by_condition/night/1918.mp4,"Extended-duration nighttime highway sequence (14.01s, 420 frames, mean L=23.14, 96.7% low-light)"
