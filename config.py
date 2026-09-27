@@ -16,6 +16,12 @@ VIDEO_DIR = os.path.join("data", "bdd100k", "videos")
 # Representative test videos (same set used in Phase 2 baseline)
 TEST_VIDEOS = ["50.mp4", "544.mp4", "1600.mp4"]
 
+# Path to BDD100K samples.json for detection baseline evaluation
+BDD_VAL_SAMPLES_JSON = os.environ.get(
+    "BDD_VAL_SAMPLES_JSON",
+    os.path.join(os.path.expanduser("~"), ".cache", "huggingface", "hub", "datasets--dgural--bdd100k", "snapshots", "c2e7f266756bcd07b87f1a45a35937c8eac20241", "samples.json")
+)
+
 # ── Phase 4: Environmental Adaptation / Illumination Handling ───────────────
 # Paper: "A Unified Lightweight YOLO Framework with Adaptive Frame Control
 #         and Selective Re-Detection for Real-Time Road-Scene Monitoring"

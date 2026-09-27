@@ -1,6 +1,6 @@
-ultralytics
-opencv-python
-numpy
-pandas
-matplotlib
-scipy
+ultralytics==8.4.149
+opencv-python==5.0.0.93
+numpy==2.5.3
+pandas==3.0.5
+matplotlib==3.11.2
+scipy==1.18.1

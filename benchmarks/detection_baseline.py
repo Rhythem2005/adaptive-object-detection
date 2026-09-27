@@ -42,32 +42,11 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from config import MODEL_PATH, CONFIDENCE_THRESHOLD
+from config import MODEL_PATH, CONFIDENCE_THRESHOLD, BDD_VAL_SAMPLES_JSON
 
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-
-# 7-Class paper vocabulary mapping: BDD100K label -> COCO class id (YOLOv8n)
-BDD_TO_COCO = {
-    "car":           2,
-    "truck":         7,
-    "bus":           5,
-    "pedestrian":    0,
-    "rider":         0,   # mapped to person (flagged explicitly)
-    "bicycle":       1,
-    "traffic light": 9,
-}
-
-# Evaluated COCO classes (6 heads covering the 7 BDD categories)
-COCO_NAMES = {
-    0: "person",
-    1: "bicycle",
-    2: "car",
-    5: "bus",
-    7: "truck",
-    9: "traffic light",
-}
 
 # COCO-style size thresholds (pixels²)
 SMALL_AREA  = 32 * 32    # 1024
@@ -127,7 +106,7 @@ def compute_ap(precisions, recalls):
 # Data loading
 # ---------------------------------------------------------------------------
 
-def load_annotations(samples_json_path, image_dir=None, n_images=None, seed=42):
+def load_annotations(samples_json_path, bdd_to_model, image_dir=None, n_images=None, seed=42):
     """Load BDD100K annotations from FiftyOne samples.json for available images.
 
     Returns:
@@ -172,17 +151,17 @@ def load_annotations(samples_json_path, image_dir=None, n_images=None, seed=42):
             for d in dets["detections"]:
                 label = d["label"]
                 total_gt += 1
-                if label not in BDD_TO_COCO:
+                if label not in bdd_to_model:
                     skipped_cats[label] += 1
                     continue
                 mapped_gt += 1
-                coco_id = BDD_TO_COCO[label]
+                model_id = bdd_to_model[label]
                 bx, by, bw, bh = d["bounding_box"]
                 x1 = bx * w
                 y1 = by * h
                 x2 = (bx + bw) * w
                 y2 = (by + bh) * h
-                gt_boxes.append((coco_id, x1, y1, x2, y2, label))
+                gt_boxes.append((model_id, x1, y1, x2, y2, label))
 
         results.append({
             "filepath": filepath,
@@ -197,7 +176,7 @@ def load_annotations(samples_json_path, image_dir=None, n_images=None, seed=42):
     print(f"  Excluded GT boxes : {total_gt - mapped_gt} (Total: {total_gt})")
     print(f"  Exclusion breakdown:")
     for cat, count in skipped_cats.most_common():
-        reason = "COCO lack equivalent class" if cat == "traffic sign" else "not in 7-class paper vocabulary"
+        reason = "model lacks equivalent class" if cat == "traffic sign" else "not in model vocabulary"
         print(f"    - {cat:<15}: {count:>5} ({reason})")
 
     return results
@@ -207,11 +186,8 @@ def load_annotations(samples_json_path, image_dir=None, n_images=None, seed=42):
 # Evaluation
 # ---------------------------------------------------------------------------
 
-def run_evaluation(samples, model_path, conf_threshold, iou_threshold=0.5):
-    """Run YOLOv8n on images and compute per-class, per-size, and sub-label metrics."""
-    from ultralytics import YOLO
-
-    model = YOLO(model_path)
+def run_evaluation(samples, model, bdd_to_model, model_to_name, conf_threshold, iou_threshold=0.5):
+    """Run YOLO on images and compute per-class, per-size, and sub-label metrics."""
 
     # Warm up
     dummy = np.zeros((720, 1280, 3), dtype=np.uint8)
@@ -220,7 +196,7 @@ def run_evaluation(samples, model_path, conf_threshold, iou_threshold=0.5):
     all_predictions = []  # (image_idx, class_id, confidence, x1, y1, x2, y2)
     all_gt = []           # (image_idx, class_id, x1, y1, x2, y2, size_bucket, orig_label)
 
-    mapped_coco_ids = set(COCO_NAMES.keys())
+    mapped_model_ids = set(model_to_name.keys())
 
     total_inference_ms = 0.0
     total_frames = 0
@@ -252,7 +228,7 @@ def run_evaluation(samples, model_path, conf_threshold, iou_threshold=0.5):
             boxes = results[0].boxes
             for box in boxes:
                 cls_id = int(box.cls[0])
-                if cls_id not in mapped_coco_ids:
+                if cls_id not in mapped_model_ids:
                     continue
                 conf = float(box.conf[0])
                 xyxy = box.xyxy[0].cpu().numpy()
@@ -283,7 +259,7 @@ def run_evaluation(samples, model_path, conf_threshold, iou_threshold=0.5):
                        "medium": {"tp": 0, "fp": 0, "fn": 0},
                        "large": {"tp": 0, "fp": 0, "fn": 0}}
 
-    for cls_id in sorted(mapped_coco_ids):
+    for cls_id in sorted(mapped_model_ids):
         cls_preds = [(p[0], p[2], p[3], p[4], p[5], p[6])
                      for p in all_predictions if p[1] == cls_id]
         cls_gt_count = sum(1 for g in all_gt if g[1] == cls_id)
@@ -335,7 +311,7 @@ def run_evaluation(samples, model_path, conf_threshold, iou_threshold=0.5):
         rec = total_tp / cls_gt_count if cls_gt_count > 0 else 0
 
         results_by_class[cls_id] = {
-            "name": COCO_NAMES[cls_id],
+            "name": model_to_name[cls_id],
             "gt_count": cls_gt_count,
             "pred_count": len(cls_preds),
             "tp": total_tp,
@@ -358,7 +334,7 @@ def run_evaluation(samples, model_path, conf_threshold, iou_threshold=0.5):
     fp_by_size = {"small": 0, "medium": 0, "large": 0}
     for pred in all_predictions:
         img_idx, cls_id, conf, px1, py1, px2, py2 = pred
-        if cls_id not in mapped_coco_ids:
+        if cls_id not in mapped_model_ids:
             continue
         pred_area = box_area_px((px1, py1, px2, py2))
         pred_size = size_bucket(pred_area)
@@ -379,23 +355,26 @@ def run_evaluation(samples, model_path, conf_threshold, iou_threshold=0.5):
         results_by_size[sb]["precision"] = round(tp / (tp + fp), 4) if (tp + fp) > 0 else 0
         results_by_size[sb]["recall"] = round(tp / (tp + fn), 4) if (tp + fn) > 0 else 0
 
-    # Sub-breakdown for pedestrian vs rider under person class (cls_id 0)
+    # Sub-breakdown for pedestrian vs rider dynamically
     pedestrian_gt = 0
     pedestrian_tp = 0
     rider_gt = 0
     rider_tp = 0
+    
+    ped_id = bdd_to_model.get("pedestrian")
+    rider_id = bdd_to_model.get("rider")
 
     for key in gt_by_img_cls:
-        if key[1] == 0:  # person
-            for g in gt_by_img_cls[key]:
-                if g["orig_label"] == "pedestrian":
-                    pedestrian_gt += 1
-                    if g["matched"]:
-                        pedestrian_tp += 1
-                elif g["orig_label"] == "rider":
-                    rider_gt += 1
-                    if g["matched"]:
-                        rider_tp += 1
+        cls_id = key[1]
+        for g in gt_by_img_cls[key]:
+            if g["orig_label"] == "pedestrian" and cls_id == ped_id:
+                pedestrian_gt += 1
+                if g["matched"]:
+                    pedestrian_tp += 1
+            elif g["orig_label"] == "rider" and cls_id == rider_id:
+                rider_gt += 1
+                if g["matched"]:
+                    rider_tp += 1
 
     person_breakdown = {
         "pedestrian": {
@@ -486,8 +465,20 @@ def print_results(results):
           f"{pb['pedestrian']['fn']:>6} {pb['pedestrian']['recall']:>8.4f}")
     print(f"  {'rider':<16} {pb['rider']['gt']:>6} {pb['rider']['tp']:>6} "
           f"{pb['rider']['fn']:>6} {pb['rider']['recall']:>8.4f}")
-    print(f"  {'combined person':<16} {by_class[0]['gt_count']:>6} {by_class[0]['tp']:>6} "
-          f"{by_class[0]['fn']:>6} {by_class[0]['recall']:>8.4f}")
+    
+    # Try to print combined if they map to same id
+    # Since we can't easily retrieve ped_id here without modifying signature, we wrap in try-except
+    try:
+        combined_id = None
+        for k, v in by_class.items():
+            if v["name"] == "person":
+                combined_id = k
+                break
+        if combined_id is not None:
+            print(f"  {'combined person':<16} {by_class[combined_id]['gt_count']:>6} {by_class[combined_id]['tp']:>6} "
+                  f"{by_class[combined_id]['fn']:>6} {by_class[combined_id]['recall']:>8.4f}")
+    except:
+        pass
     print()
 
     print("  Per-Size Results (COCO area definitions):")
@@ -568,26 +559,45 @@ def main():
     print(f"  IoU threshold       : 0.5")
     print()
 
-    # Step 1: Locate annotations
-    samples_json = os.path.join(
-        os.path.expanduser("~"),
-        ".cache/huggingface/hub/datasets--dgural--bdd100k/"
-        "snapshots/c2e7f266756bcd07b87f1a45a35937c8eac20241/samples.json"
-    )
+    # Step 1: Load Model & Configure Class Mapping
+    from ultralytics import YOLO
+    print(f"  Loading model: {MODEL_PATH}")
+    model = YOLO(MODEL_PATH)
+
+    name_to_id = {v: k for k, v in model.names.items()}
+    core_bdd_classes = ["car", "bus", "truck", "pedestrian", "rider", "bicycle", "traffic light"]
+
+    bdd_to_model = {}
+    for bdd_cls in core_bdd_classes:
+        if bdd_cls in name_to_id:
+            bdd_to_model[bdd_cls] = name_to_id[bdd_cls]
+        elif bdd_cls in ["pedestrian", "rider"] and "person" in name_to_id:
+            # Fallback for models using COCO vocabulary (pedestrian/rider -> person)
+            bdd_to_model[bdd_cls] = name_to_id["person"]
+
+    mapped_ids = set(bdd_to_model.values())
+    model_to_name = {cid: model.names[cid] for cid in mapped_ids}
+
+    print(f"  Model mapping resolved:")
+    for bdd_cls, cid in bdd_to_model.items():
+        print(f"    - BDD '{bdd_cls}' -> Model ID {cid} ('{model.names[cid]}')")
+
+    # Step 2: Locate annotations
+    samples_json = BDD_VAL_SAMPLES_JSON
 
     if not os.path.exists(samples_json):
         print(f"  [ERROR] Cannot find annotations at {samples_json}")
         sys.exit(1)
 
     print("  Loading annotations...")
-    samples = load_annotations(samples_json, image_dir=args.image_dir, n_images=args.n_images, seed=args.seed)
+    samples = load_annotations(samples_json, bdd_to_model, image_dir=args.image_dir, n_images=args.n_images, seed=args.seed)
 
     if len(samples) == 0:
         print(f"  [ERROR] No images found in {args.image_dir}")
         sys.exit(1)
 
-    # Step 2: Run evaluation
-    results = run_evaluation(samples, MODEL_PATH, CONFIDENCE_THRESHOLD)
+    # Step 3: Run evaluation
+    results = run_evaluation(samples, model, bdd_to_model, model_to_name, CONFIDENCE_THRESHOLD)
 
     # Step 3: Print and save
     print_results(results)
@@ -598,7 +608,7 @@ def main():
     print("  - Evaluated dataset: BDD100K 10K val split, N=425 still images on disk")
     print("  - 7 Categories evaluated: car, bus, truck, pedestrian, rider, bicycle, traffic light")
     print("  - Traffic sign (1,472 annotations) explicitly excluded (COCO model lacks class)")
-    print("  - Rider (35 annotations) mapped to COCO person head; pedestrian (581) also mapped to person")
+    print("  - Rider and pedestrian mapping depends on model architecture (dynamic fallback to 'person')")
     print("  - Metrics established as ground truth baseline for Phase 5 small-object comparisons.")
     print()
 
