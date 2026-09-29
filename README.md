@@ -1,6 +1,6 @@
 # Adaptive Vision
 
-### Adaptive Real-Time Object Detection for Driving Videos Using Selective Re-Detection and Temporal Tracking
+### Adaptive Real-Time Object Detection for Driving Videos Using Selective Re-Detection 
 
 **GitHub Repository:** `adaptive-vision`  
 **Project Category:** B.Tech Minor Project / Applied Computer Vision Research  
