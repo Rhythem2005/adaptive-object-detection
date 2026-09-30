@@ -1,0 +1,64 @@
+DATASET VALIDATION REPORT
+
+Dataset:
+Images: 98802
+Labels: 98802
+
+Train:
+  Images: 11680
+  Labels: 11680
+
+Validation:
+  Images: 43350
+  Labels: 43350
+
+Test:
+  Images: 43772
+  Labels: 43772
+
+Classes:
+  0: car — 664327 annotations
+  1: bus — 14996 annotations
+  2: truck — 43892 annotations
+  3: pedestrian — 86079 annotations
+  4: rider — 0 annotations
+  5: bicycle — 1607 annotations
+  6: traffic light — 59108 annotations
+
+FORMAT ERRORS:
+  None
+
+CLASS-ID ERRORS:
+  Class ID 4 (rider) declared in YAML but never used.
+
+MISSING LABELS:
+  None
+
+ORPHAN LABELS:
+  None
+
+INVALID BOUNDING BOXES:
+  None
+
+DUPLICATE/SUSPICIOUS ANNOTATIONS:
+  /Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/Prep-Data/labels/val/day_901_f000231.txt:1: Box covers almost entire image (w=1.00, h=0.99)
+  /Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/Prep-Data/labels/val/day_901_f000219.txt:1: Box covers almost entire image (w=0.99, h=0.99)
+  /Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/Prep-Data/labels/val/day_901_f000205.txt:1: Box covers almost entire image (w=0.99, h=0.99)
+  /Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/Prep-Data/labels/val/day_901_f000229.txt:1: Box covers almost entire image (w=1.00, h=0.99)
+  /Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/Prep-Data/labels/val/day_901_f000230.txt:1: Box covers almost entire image (w=1.00, h=0.99)
+  /Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/Prep-Data/labels/val/day_901_f000216.txt:1: Box covers almost entire image (w=1.00, h=0.99)
+  /Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/Prep-Data/labels/val/day_901_f000217.txt:1: Box covers almost entire image (w=1.00, h=0.99)
+  /Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/Prep-Data/labels/test/day_810_f000062.txt:3: Box covers almost entire image (w=0.99, h=0.98)
+  /Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/Prep-Data/labels/test/day_810_f000103.txt:1: Box covers almost entire image (w=1.00, h=0.98)
+
+SPLIT LEAKAGE:
+  None
+
+YAML CONSISTENCY:
+  None
+
+FINAL STATUS:
+  FAIL
+
+**Are these labels safe and structurally valid for YOLOv8 fine-tuning?**
+NO - The dataset contains structural errors that will likely crash YOLOv8 training or cause invalid metrics.

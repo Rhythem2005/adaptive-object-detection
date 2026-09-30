@@ -1,0 +1,266 @@
+{
+  "metadata": {
+    "model": "yolov8n.pt",
+    "model_type": "stock COCO pretrained (no fine-tuning)",
+    "pretrained": true,
+    "fine_tuned": false,
+    "dataset": "dataset2",
+    "dataset_path": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/Prep-Data",
+    "split": "test",
+    "device": "mps",
+    "confidence_threshold": 0.25,
+    "iou_threshold_ap50": 0.5,
+    "iou_thresholds_ap50_95": [
+      0.5,
+      0.55,
+      0.6000000000000001,
+      0.6500000000000001,
+      0.7000000000000002,
+      0.7500000000000002,
+      0.8000000000000003,
+      0.8500000000000003,
+      0.9000000000000004,
+      0.9500000000000004
+    ],
+    "class_mapping": {
+      "car": {
+        "ds2_id": 0,
+        "coco_id": 2,
+        "coco_name": "car",
+        "note": null
+      },
+      "bus": {
+        "ds2_id": 1,
+        "coco_id": 5,
+        "coco_name": "bus",
+        "note": null
+      },
+      "truck": {
+        "ds2_id": 2,
+        "coco_id": 7,
+        "coco_name": "truck",
+        "note": null
+      },
+      "pedestrian": {
+        "ds2_id": 3,
+        "coco_id": 0,
+        "coco_name": "person",
+        "note": null
+      },
+      "rider": {
+        "ds2_id": 4,
+        "coco_id": 0,
+        "coco_name": "person",
+        "note": "No COCO equivalent; mapped to 'person' per repo convention in detection_baseline.py"
+      },
+      "bicycle": {
+        "ds2_id": 5,
+        "coco_id": 1,
+        "coco_name": "bicycle",
+        "note": null
+      },
+      "traffic light": {
+        "ds2_id": 6,
+        "coco_id": 9,
+        "coco_name": "traffic light",
+        "note": null
+      }
+    },
+    "latency_methodology": {
+      "warmup": "1 dummy frame (720x1280, zeros)",
+      "timing": "time.perf_counter() around model.predict() only",
+      "excludes": "data loading (cv2.imread), label parsing",
+      "metrics_reported": [
+        "mean",
+        "median",
+        "p95",
+        "fps_wall_clock"
+      ]
+    },
+    "size_buckets": {
+      "small": "area < 1024 px\u00b2 (32\u00b2)",
+      "medium": "1024 px\u00b2 \u2264 area < 9216 px\u00b2 (96\u00b2)",
+      "large": "area \u2265 9216 px\u00b2 (96\u00b2)"
+    },
+    "timestamp": "2026-09-28T00:00:32+0530"
+  },
+  "overall": {
+    "n_images": 43772,
+    "total_gt_objects": 385187,
+    "total_predictions": 384121,
+    "images_with_no_gt": 658,
+    "total_tp": 375585,
+    "total_fp": 8536,
+    "total_fn": 9602,
+    "precision": 0.9778,
+    "recall": 0.9751,
+    "mAP50": 0.9601,
+    "mAP50_95": 0.9516,
+    "avg_inference_ms": 9.69,
+    "median_inference_ms": 7.17,
+    "p95_inference_ms": 25.14,
+    "fps": 57.14,
+    "total_wall_s": 766.02
+  },
+  "per_class": {
+    "person": {
+      "coco_name": "person",
+      "ds2_mapped_from": [
+        "pedestrian",
+        "rider"
+      ],
+      "gt_count": 36032,
+      "pred_count": 35946,
+      "tp": 34805,
+      "fp": 1141,
+      "fn": 1227,
+      "precision": 0.9683,
+      "recall": 0.9659,
+      "ap50": 0.9581,
+      "ap50_95": 0.944
+    },
+    "bicycle": {
+      "coco_name": "bicycle",
+      "ds2_mapped_from": [
+        "bicycle"
+      ],
+      "gt_count": 644,
+      "pred_count": 664,
+      "tp": 622,
+      "fp": 42,
+      "fn": 22,
+      "precision": 0.9367,
+      "recall": 0.9658,
+      "ap50": 0.9503,
+      "ap50_95": 0.937
+    },
+    "car": {
+      "coco_name": "car",
+      "ds2_mapped_from": [
+        "car"
+      ],
+      "gt_count": 294384,
+      "pred_count": 293577,
+      "tp": 287761,
+      "fp": 5816,
+      "fn": 6623,
+      "precision": 0.9802,
+      "recall": 0.9775,
+      "ap50": 0.969,
+      "ap50_95": 0.9609
+    },
+    "bus": {
+      "coco_name": "bus",
+      "ds2_mapped_from": [
+        "bus"
+      ],
+      "gt_count": 6492,
+      "pred_count": 6484,
+      "tp": 6282,
+      "fp": 202,
+      "fn": 210,
+      "precision": 0.9688,
+      "recall": 0.9677,
+      "ap50": 0.9579,
+      "ap50_95": 0.9561
+    },
+    "truck": {
+      "coco_name": "truck",
+      "ds2_mapped_from": [
+        "truck"
+      ],
+      "gt_count": 20908,
+      "pred_count": 20856,
+      "tp": 20286,
+      "fp": 570,
+      "fn": 622,
+      "precision": 0.9727,
+      "recall": 0.9703,
+      "ap50": 0.9665,
+      "ap50_95": 0.9608
+    },
+    "traffic light": {
+      "coco_name": "traffic light",
+      "ds2_mapped_from": [
+        "traffic light"
+      ],
+      "gt_count": 26727,
+      "pred_count": 26594,
+      "tp": 25829,
+      "fp": 765,
+      "fn": 898,
+      "precision": 0.9712,
+      "recall": 0.9664,
+      "ap50": 0.9588,
+      "ap50_95": 0.9511
+    }
+  },
+  "person_breakdown": {
+    "pedestrian": {
+      "gt": 36032,
+      "tp": 34805,
+      "fn": 1227,
+      "recall": 0.9659
+    },
+    "rider": {
+      "gt": 0,
+      "tp": 0,
+      "fn": 0,
+      "recall": 0.0,
+      "note": "No COCO equivalent; mapped to 'person' per repo convention"
+    }
+  },
+  "size_breakdown": {
+    "small": {
+      "tp": 42340,
+      "fn": 1667,
+      "fp": 1056,
+      "precision": 0.9757,
+      "recall": 0.9621
+    },
+    "medium": {
+      "tp": 204465,
+      "fn": 6060,
+      "fp": 2541,
+      "precision": 0.9877,
+      "recall": 0.9712
+    },
+    "large": {
+      "tp": 128780,
+      "fn": 1875,
+      "fp": 1227,
+      "precision": 0.9906,
+      "recall": 0.9856
+    }
+  },
+  "condition_results": {
+    "day": {
+      "n_images": 42872,
+      "gt_objects": 379472,
+      "predictions": 378450,
+      "tp": 370166,
+      "fp": 8284,
+      "fn": 9306,
+      "precision": 0.9781,
+      "recall": 0.9755,
+      "mAP50": 0.9601,
+      "avg_inference_ms": 9.75,
+      "median_inference_ms": 7.18,
+      "p95_inference_ms": 25.25
+    },
+    "night": {
+      "n_images": 900,
+      "gt_objects": 5715,
+      "predictions": 5671,
+      "tp": 5419,
+      "fp": 252,
+      "fn": 296,
+      "precision": 0.9556,
+      "recall": 0.9482,
+      "mAP50": 0.7021,
+      "avg_inference_ms": 7.22,
+      "median_inference_ms": 7.12,
+      "p95_inference_ms": 7.3
+    }
+  }
+}

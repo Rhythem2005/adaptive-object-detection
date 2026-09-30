@@ -1,0 +1,14 @@
+# Targeted detector-only fine-tuning. Do not add a test entry: test evaluation is separate.
+path: /Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/Prep-Data-Sampled-Targeted
+train: images/train
+val: /Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/Prep-Data/images/val
+
+nc: 7
+names:
+  0: car
+  1: bus
+  2: truck
+  3: pedestrian
+  4: rider
+  5: bicycle
+  6: traffic light

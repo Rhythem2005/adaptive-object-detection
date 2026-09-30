@@ -1,0 +1,180 @@
+{
+  "stock": {
+    "overall": {
+      "precision": 0.9773,
+      "recall": 0.9737,
+      "mAP50": 0.986,
+      "mAP50_95": 0.9758,
+      "tp": 17163,
+      "fp": 399,
+      "fn": 463,
+      "gt": 17626,
+      "pred_op": 17562,
+      "pred_ap": 390843,
+      "mean_latency": 9.25,
+      "median_latency": 7.66,
+      "p95_latency": 21.5
+    },
+    "per_class": {
+      "car": {
+        "gt": 13330,
+        "tp": 13022,
+        "fp": "N/A (Shared)",
+        "fn": 308,
+        "precision": 0.9796,
+        "recall": 0.9769,
+        "ap50": 0.9878,
+        "ap50_95": 0.9761
+      },
+      "bus": {
+        "gt": 318,
+        "tp": 311,
+        "fp": "N/A (Shared)",
+        "fn": 7,
+        "precision": 0.9688,
+        "recall": 0.978,
+        "ap50": 0.9866,
+        "ap50_95": 0.9822
+      },
+      "truck": {
+        "gt": 859,
+        "tp": 829,
+        "fp": "N/A (Shared)",
+        "fn": 30,
+        "precision": 0.9696,
+        "recall": 0.9651,
+        "ap50": 0.978,
+        "ap50_95": 0.9728
+      },
+      "pedestrian": {
+        "gt": 1943,
+        "tp": 1872,
+        "fp": "N/A (Shared)",
+        "fn": 71,
+        "precision": 0.9725,
+        "recall": 0.9635,
+        "ap50": 0.9863,
+        "ap50_95": 0.9673
+      },
+      "rider": {
+        "gt": 0,
+        "tp": 0,
+        "fp": "N/A (Shared)",
+        "fn": 0,
+        "precision": 0.9725,
+        "recall": 0.0,
+        "ap50": 0.9863,
+        "ap50_95": 0.9673
+      },
+      "bicycle": {
+        "gt": 31,
+        "tp": 30,
+        "fp": "N/A (Shared)",
+        "fn": 1,
+        "precision": 0.9375,
+        "recall": 0.9677,
+        "ap50": 0.9908,
+        "ap50_95": 0.98
+      },
+      "traffic light": {
+        "gt": 1145,
+        "tp": 1099,
+        "fp": "N/A (Shared)",
+        "fn": 46,
+        "precision": 0.9674,
+        "recall": 0.9598,
+        "ap50": 0.9863,
+        "ap50_95": 0.9766
+      }
+    }
+  },
+  "ft": {
+    "overall": {
+      "precision": 0.7482,
+      "recall": 0.8409,
+      "mAP50": 0.6012,
+      "mAP50_95": 0.4547,
+      "tp": 14822,
+      "fp": 4987,
+      "fn": 2804,
+      "gt": 17626,
+      "pred_op": 19809,
+      "pred_ap": 231513,
+      "mean_latency": 7.47,
+      "median_latency": 7.16,
+      "p95_latency": 7.99
+    },
+    "per_class": {
+      "car": {
+        "gt": 13330,
+        "tp": 11923,
+        "fp": 3596,
+        "fn": 1407,
+        "precision": 0.7683,
+        "recall": 0.8944,
+        "ap50": 0.9045,
+        "ap50_95": 0.7252
+      },
+      "bus": {
+        "gt": 318,
+        "tp": 197,
+        "fp": 110,
+        "fn": 121,
+        "precision": 0.6417,
+        "recall": 0.6195,
+        "ap50": 0.6291,
+        "ap50_95": 0.5175
+      },
+      "truck": {
+        "gt": 859,
+        "tp": 563,
+        "fp": 295,
+        "fn": 296,
+        "precision": 0.6562,
+        "recall": 0.6554,
+        "ap50": 0.7085,
+        "ap50_95": 0.6023
+      },
+      "pedestrian": {
+        "gt": 1943,
+        "tp": 1391,
+        "fp": 575,
+        "fn": 552,
+        "precision": 0.7075,
+        "recall": 0.7159,
+        "ap50": 0.767,
+        "ap50_95": 0.5439
+      },
+      "rider": {
+        "gt": 0,
+        "tp": 0,
+        "fp": 0,
+        "fn": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "ap50": 0.0,
+        "ap50_95": 0.0
+      },
+      "bicycle": {
+        "gt": 31,
+        "tp": 18,
+        "fp": 43,
+        "fn": 13,
+        "precision": 0.2951,
+        "recall": 0.5806,
+        "ap50": 0.4819,
+        "ap50_95": 0.2556
+      },
+      "traffic light": {
+        "gt": 1145,
+        "tp": 730,
+        "fp": 368,
+        "fn": 415,
+        "precision": 0.6648,
+        "recall": 0.6376,
+        "ap50": 0.7173,
+        "ap50_95": 0.5387
+      }
+    }
+  }
+}

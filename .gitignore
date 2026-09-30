@@ -53,3 +53,8 @@ benchmarks/historical/old_425_image_evaluation/images/
 *.jpeg
 *.png
 *.pt
+
+# Experiment Data
+Prep-Data*/
+Stage3-Smoke/
+scratch/
