@@ -58,3 +58,14 @@ benchmarks/historical/old_425_image_evaluation/images/
 Prep-Data*/
 Stage3-Smoke/
 scratch/
+
+# Exceptions for authoritative models & artifacts
+!yolov8n.pt
+!Experiment-B/
+!Experiment-B/runs/
+!Experiment-B/runs/targeted_finetune/
+!Experiment-B/runs/targeted_finetune/weights/
+!Experiment-B/runs/targeted_finetune/weights/best.pt
+!Experiment-B/runs/targeted_finetune/args.yaml
+!Experiment-B/runs/targeted_finetune/results.csv
+!Experiment-B/runs/targeted_finetune/*.png
