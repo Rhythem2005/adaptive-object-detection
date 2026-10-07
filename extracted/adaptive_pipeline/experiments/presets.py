@@ -44,3 +44,24 @@ SUITES = {
     "illumination": ["baseline", "baseline_clahe", "adaptive_full", "adaptive_full_clahe"],
     "refine": ["baseline", "baseline_refine", "adaptive_full", "adaptive_full_refine"],
 }
+
+# ── Final targeted validation (appended, existing presets untouched) ──
+PRESETS["adaptive_C"] = dict(
+    k_max=4, novelty_thr=0.10, conf_decay=0.93, k_uncertain=2,
+    use_local=True, max_local_rois=5, fail_frac_thr=0.20,
+)
+PRESETS["C_fullfallback"] = dict(
+    k_max=4, novelty_thr=0.10, conf_decay=0.93, k_uncertain=2,
+    use_local=True, max_local_rois=0, fail_frac_thr=0.20,
+)
+PRESETS["C_k3_no_local"] = dict(
+    k_max=3, novelty_thr=0.10, conf_decay=0.93, k_uncertain=2,
+    use_local=True, max_local_rois=0, fail_frac_thr=0.20,
+)
+PRESETS["C_k5_no_local"] = dict(
+    k_max=5, novelty_thr=0.10, conf_decay=0.93, k_uncertain=2,
+    use_local=True, max_local_rois=0, fail_frac_thr=0.20,
+)
+PRESETS["fixed2_093"] = dict(policy="fixed", fixed_k=2, propagation="flow", conf_decay=0.93)
+PRESETS["fixed3_093"] = dict(policy="fixed", fixed_k=3, propagation="flow", conf_decay=0.93)
+PRESETS["fixed4_093"] = dict(policy="fixed", fixed_k=4, propagation="flow", conf_decay=0.93)
