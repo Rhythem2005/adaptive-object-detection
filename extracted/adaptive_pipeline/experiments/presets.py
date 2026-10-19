@@ -65,3 +65,32 @@ PRESETS["C_k5_no_local"] = dict(
 PRESETS["fixed2_093"] = dict(policy="fixed", fixed_k=2, propagation="flow", conf_decay=0.93)
 PRESETS["fixed3_093"] = dict(policy="fixed", fixed_k=3, propagation="flow", conf_decay=0.93)
 PRESETS["fixed4_093"] = dict(policy="fixed", fixed_k=4, propagation="flow", conf_decay=0.93)
+
+# Unvalidated improvement candidates. No settings below have been tuned on data.
+# The original presets above remain frozen references.
+PRESETS["fixed2_observed"] = dict(PRESETS["fixed2_093"], observation_anchoring=True)
+PRESETS["adaptive_observed"] = dict(PRESETS["C_fullfallback"], observation_anchoring=True)
+_QUALITY = dict(observation_anchoring=True, quality_aware_flow=True)
+PRESETS["fixed2_quality"] = dict(PRESETS["fixed2_093"], **_QUALITY)
+PRESETS["adaptive_quality"] = dict(PRESETS["C_fullfallback"], **_QUALITY)
+_SAFE = dict(PRESETS["adaptive_quality"], controller_mode="risk", use_local=False,
+             adaptive_min_interval=2, detector_budget_fraction=0.55)
+PRESETS["adaptive_safe"] = dict(_SAFE)
+PRESETS["adaptive_safe_scores"] = dict(_SAFE, quality_conf_decay=True)
+PRESETS["fixed2_quality_scores"] = dict(PRESETS["fixed2_quality"], quality_conf_decay=True)
+PRESETS["adaptive_safe_local"] = dict(_SAFE, use_local=True, max_local_rois=3,
+                                      local_cost_gate=True, local_max_crops=1, dynamic_roi_margin=True)
+PRESETS["adaptive_safe_camera"] = dict(_SAFE, motion_compensation=True)
+PRESETS["adaptive_safe_verify"] = dict(_SAFE, appearance_verification=True)
+PRESETS["adaptive_safe_corners"] = dict(_SAFE, flow_point_mode="corners")
+PRESETS["adaptive_safe_association"] = dict(_SAFE, low_score_association=True)
+PRESETS["adaptive_safe_births"] = dict(PRESETS["adaptive_safe_local"], local_births=True)
+PRESETS["adaptive_hybrid"] = dict(PRESETS["adaptive_safe_local"], quality_conf_decay=True)
+SUITES["observation"] = ["baseline", "fixed2_093", "fixed2_observed", "C_fullfallback", "adaptive_observed"]
+SUITES["quality"] = ["fixed2_observed", "fixed2_quality", "adaptive_observed", "adaptive_quality"]
+SUITES["safe"] = ["baseline", "fixed2_093", "fixed2_quality", "C_fullfallback", "adaptive_quality", "adaptive_safe"]
+SUITES["local_cost"] = ["adaptive_C", "adaptive_safe", "adaptive_safe_local", "adaptive_safe_births"]
+SUITES["verification"] = ["adaptive_safe", "adaptive_safe_camera", "adaptive_safe_verify", "adaptive_safe_corners"]
+SUITES["confidence"] = ["fixed2_quality", "fixed2_quality_scores", "adaptive_safe", "adaptive_safe_scores",
+                        "adaptive_safe_association"]
+SUITES["hybrid"] = ["baseline", "fixed2_quality_scores", "adaptive_safe_scores", "adaptive_safe_local", "adaptive_hybrid"]

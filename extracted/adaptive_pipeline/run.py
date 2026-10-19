@@ -17,6 +17,7 @@ import numpy as np
 from .adaptive_framing.sequence import DEFAULT_SEQ_REGEX, discover_sequences, iter_video
 from .detection.detector import YOLODetector
 from .evaluation.evaluator import DetectionEvaluator, load_yolo_labels
+from .evaluation.provenance import assert_fresh_run, input_manifest, runtime_metadata
 from .experiments.presets import PRESETS
 from .pipeline import AdaptivePipeline
 from .shared.config import DATASET_NAMES, PipelineConfig
@@ -44,14 +45,22 @@ def build_config(preset, overrides):
     return cfg.with_overrides(**kw) if kw else cfg
 
 
-def run_sequences(cfg, sequences, out_dir, detector=None, max_frames=None, save_preds=False, log_every=20):
+def run_sequences(cfg, sequences, out_dir, detector=None, max_frames=None, save_preds=False, log_every=20, hash_inputs=False,
+                  names=DATASET_NAMES):
+    assert_fresh_run(out_dir)
+    manifest = input_manifest(sequences, max_frames, hash_inputs)
     os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "input_manifest.json"), "w") as stream:
+        json.dump(manifest, stream, indent=2)
     detector = detector or YOLODetector(cfg)
+    previous_cfg = getattr(detector, "cfg", cfg)
+    if previous_cfg.model_path != cfg.model_path or previous_cfg.class_map != cfg.class_map:
+        raise ValueError("A reused detector must retain its checkpoint and class mapping")
     detector.cfg = cfg
     pipe = AdaptivePipeline(cfg, detector)
-    ev = DetectionEvaluator(DATASET_NAMES)
+    ev = DetectionEvaluator(names)
     tel = Telemetry()
-    preds = {}
+    preds, prediction_details = {}, {}
     warmed = False
     full_gf = None
     t_start = time.time()
@@ -73,22 +82,36 @@ def run_sequences(cfg, sequences, out_dir, detector=None, max_frames=None, save_
             rec["video"] = seq.name
             rec["decode_ms"] = decode_ms
             tel.add(rec)
-            if seq.labels is not None:
+            if seq.targets is not None or seq.labels is not None:
                 h, w = frame.shape[:2]
-                gts = load_yolo_labels(seq.labels[fi], w, h)
+                gts = seq.targets[fi] if seq.targets is not None else load_yolo_labels(seq.labels[fi], w, h)
                 ev.add(out, gts, {"decision": rec["decision"], "stale": _stale_bin(rec["since_full"]),
-                                  "video": seq.name})
+                                  "video": seq.name},
+                       ignored_regions=seq.ignored[fi] if seq.ignored is not None else None)
             if save_preds:
                 preds[f"{seq.name}/{fi}"] = out
+                prediction_details[f"{seq.name}/{fi}"] = pipe.last_prediction_details.copy()
         if log_every and (si + 1) % log_every == 0:
             print(f"  [{si + 1}/{len(sequences)}] videos  {time.time() - t_start:.0f}s", flush=True)
 
     from .evaluation import evaluator as _ev
     result = {"config": cfg.to_dict(), "ap_protocol": _ev.AP_PROTOCOL, "efficiency": tel.summary(full_gf)}
+    result["provenance"] = dict(runtime_metadata(cfg, detector), input_manifest_sha256=manifest["sha256"])
     if ev.tp:
         result["detection"] = ev.compute()
         result["detection_by_decision"] = {d: ev.compute(lambda t, d=d: t["decision"] == d) for d in ("FULL", "LOCAL", "SKIP")}
         result["detection_by_staleness"] = {b: ev.compute(lambda t, b=b: t["stale"] == b) for *_, b in STALE_BINS}
+        result["detection_by_sequence"] = {seq.name: ev.compute(lambda t, n=seq.name: t["video"] == n)
+                                           for seq in sequences}
+    result["efficiency_by_sequence"] = {}
+    for seq in sequences:
+        per_seq = Telemetry()
+        per_seq.records = [r for r in tel.records if r["video"] == seq.name]
+        summary = per_seq.summary(full_gf)
+        # These process-wide counters cannot be reconstructed from frame rows.
+        for key in ("cpu_ms_per_frame", "peak_rss_mb", "peak_gpu_mem_mb"):
+            summary.pop(key, None)
+        result["efficiency_by_sequence"][seq.name] = summary
     with open(os.path.join(out_dir, "metrics.json"), "w") as f:
         json.dump(result, f, indent=2, default=float)
     tel.to_csv(os.path.join(out_dir, "frames.csv"))
@@ -96,6 +119,7 @@ def run_sequences(cfg, sequences, out_dir, detector=None, max_frames=None, save_
         ev.save(os.path.join(out_dir, "eval_stats.npz"))
     if save_preds:
         np.savez_compressed(os.path.join(out_dir, "preds.npz"), **preds)
+        np.savez_compressed(os.path.join(out_dir, "prediction_details.npz"), **prediction_details)
     return result, detector
 
 
@@ -103,6 +127,9 @@ def run_realtime(cfg, video, out_dir):
     """Live demo: paced capture, latest-frame buffer. Deadline drops reported separately."""
     from .adaptive_framing.capture import VideoCaptureThread
     from .adaptive_framing.frame_manager import LatestFrameBuffer
+    assert_fresh_run(out_dir)
+    if os.path.exists(os.path.join(out_dir, "realtime.json")):
+        raise FileExistsError(f"Refusing to overwrite {out_dir}/realtime.json")
     det = YOLODetector(cfg)
     pipe = AdaptivePipeline(cfg, det)
     tel = Telemetry()
@@ -144,6 +171,7 @@ def main():
     ap.add_argument("--max-videos", type=int)
     ap.add_argument("--max-frames", type=int)
     ap.add_argument("--save-preds", action="store_true")
+    ap.add_argument("--hash-inputs", action="store_true", help="also hash image bytes (extra I/O outside pipeline timing)")
     ap.add_argument("--ap-protocol", choices=["current", "legacy"], default="current",
                     help="must match the ultralytics version of the frozen baseline run")
     ap.add_argument("--out", required=True)
@@ -172,7 +200,7 @@ def main():
               f"(expected test: 122 / 43,772 -- if this differs, fix --seq-regex)")
         if a.max_videos:
             seqs = seqs[: a.max_videos]
-    res, _ = run_sequences(cfg, seqs, a.out, max_frames=a.max_frames, save_preds=a.save_preds)
+    res, _ = run_sequences(cfg, seqs, a.out, max_frames=a.max_frames, save_preds=a.save_preds, hash_inputs=a.hash_inputs)
     print(json.dumps({k: res[k] for k in ("detection", "efficiency") if k in res}, indent=2, default=float))
 
 

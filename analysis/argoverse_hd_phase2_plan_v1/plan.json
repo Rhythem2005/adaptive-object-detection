@@ -1,0 +1,225 @@
+{
+  "status": "AWAITING_USER_APPROVAL_NOT_RUN",
+  "prepared_on": "2026-10-19",
+  "preparation_only": "JSON/config/schedule specification and deterministic frame selection; no metrics, tests, replay, image decode or inference executed",
+  "detector": "existing stock yolov8n.pt; no checkpoint substitution/training/download",
+  "source_weights_sha256": "f59b3d833e2ff32e194b5bb8e08d211dc7c5bdf144b90d2c8412c47ccfc83b36",
+  "source_benchmark": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/runs/argoverse_hd_benchmark_v1",
+  "verified_scoring": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/runs/argoverse_hd_coco_phase1_v1",
+  "dataset": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/data/argoverse_hd",
+  "fresh_execution_root": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/runs/argoverse_hd_phase2_diagnostics_v1",
+  "runners_implemented": false,
+  "after_approval_harness_scope": "analysis-only cache adapter, non-mutating diagnostic wrappers, forced-schedule controller and arbitrary-arm COCO scorer; no production pipeline algorithm edits",
+  "requested_initial_batch": {
+    "A_saved_pairing": {
+      "frames": 3416,
+      "methods": [
+        "baseline",
+        "fixed2_093",
+        "C_fullfallback",
+        "adaptive_observed",
+        "adaptive_quality"
+      ],
+      "new_YOLO_inferences": 0,
+      "replays": 0,
+      "outputs_subdir": "A_saved_pairing"
+    },
+    "R_reference_parity": {
+      "methods": [
+        "fixed2_093",
+        "C_fullfallback",
+        "adaptive_observed",
+        "adaptive_quality"
+      ],
+      "full_sequence_passes": 4,
+      "frames_each": 3416,
+      "outputs_subdir": "R_reference_parity",
+      "stop_if_not_bitwise_equal": true
+    },
+    "B_tracking_factors": {
+      "arms": {
+        "T0_fixed2_original": {
+          "base": "fixed2_093/config",
+          "overrides": {},
+          "full_config": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/configs/T0_fixed2_original.json",
+          "frames": 3416
+        },
+        "T1_fixed2_anchor": {
+          "base": "fixed2_093/config",
+          "overrides": {
+            "observation_anchoring": true
+          },
+          "full_config": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/configs/T1_fixed2_anchor.json",
+          "frames": 3416
+        },
+        "T2_fixed2_quality": {
+          "base": "fixed2_093/config",
+          "overrides": {
+            "observation_anchoring": true,
+            "quality_aware_flow": true
+          },
+          "full_config": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/configs/T2_fixed2_quality.json",
+          "frames": 3416
+        },
+        "T3_existing_track_recovery": {
+          "base": "fixed2_093/config",
+          "overrides": {
+            "observation_anchoring": true,
+            "low_score_association": true,
+            "association_low_conf": 0.1
+          },
+          "full_config": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/configs/T3_existing_track_recovery.json",
+          "frames": 3416
+        },
+        "T4_low_birth_threshold": {
+          "base": "fixed2_093/config",
+          "overrides": {
+            "observation_anchoring": true,
+            "track_min_conf": 0.1
+          },
+          "full_config": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/configs/T4_low_birth_threshold.json",
+          "frames": 3416
+        },
+        "T5_no_score_decay": {
+          "base": "fixed2_093/config",
+          "overrides": {
+            "observation_anchoring": true,
+            "conf_decay": 1.0
+          },
+          "full_config": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/configs/T5_no_score_decay.json",
+          "frames": 3416
+        },
+        "T6_hold_boxes": {
+          "base": "fixed2_093/config",
+          "overrides": {
+            "observation_anchoring": true,
+            "propagation": "hold"
+          },
+          "full_config": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/configs/T6_hold_boxes.json",
+          "frames": 3416
+        }
+      },
+      "full_sequence_passes": 6,
+      "reuse_T0_from_reference": true,
+      "frames_each": 3416,
+      "outputs_subdir": "B_tracking_factors"
+    },
+    "C_schedule_factors": {
+      "cells": [
+        {
+          "name": "S0_anchor_archived_original",
+          "engine_config": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/configs/S_anchor_engine.json",
+          "schedule": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/schedules/C_fullfallback.json"
+        },
+        {
+          "name": "S1_anchor_uniform_original",
+          "engine_config": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/configs/S_anchor_engine.json",
+          "schedule": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/schedules/uniform_C_fullfallback.json"
+        },
+        {
+          "name": "S2_anchor_archived_anchor",
+          "engine_config": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/configs/S_anchor_engine.json",
+          "schedule": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/schedules/adaptive_observed.json"
+        },
+        {
+          "name": "S3_anchor_uniform_anchor",
+          "engine_config": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/configs/S_anchor_engine.json",
+          "schedule": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/schedules/uniform_adaptive_observed.json"
+        },
+        {
+          "name": "S4_anchor_archived_quality",
+          "engine_config": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/configs/S_anchor_engine.json",
+          "schedule": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/schedules/adaptive_quality.json"
+        },
+        {
+          "name": "S5_anchor_uniform_quality",
+          "engine_config": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/configs/S_anchor_engine.json",
+          "schedule": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/schedules/uniform_adaptive_quality.json"
+        },
+        {
+          "name": "S6_quality_archived_anchor",
+          "engine_config": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/configs/S_quality_engine.json",
+          "schedule": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/schedules/adaptive_observed.json"
+        },
+        {
+          "name": "S7_quality_archived_quality",
+          "engine_config": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/configs/S_quality_engine.json",
+          "schedule": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/schedules/adaptive_quality.json"
+        },
+        {
+          "name": "S_phase_anchor_uniform_C_fullfallback",
+          "engine_config": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/configs/S_anchor_engine.json",
+          "schedule": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/schedules/uniform_phase_C_fullfallback.json"
+        },
+        {
+          "name": "S_phase_anchor_uniform_adaptive_observed",
+          "engine_config": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/configs/S_anchor_engine.json",
+          "schedule": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/schedules/uniform_phase_adaptive_observed.json"
+        },
+        {
+          "name": "S_phase_anchor_uniform_adaptive_quality",
+          "engine_config": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/configs/S_anchor_engine.json",
+          "schedule": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/schedules/uniform_phase_adaptive_quality.json"
+        }
+      ],
+      "full_sequence_passes": 11,
+      "frames_each": 3416,
+      "outputs_subdir": "C_schedule_factors",
+      "calls_per_sequence": {
+        "C_fullfallback": {
+          "sequence_00": 466,
+          "sequence_01": 438,
+          "sequence_02": 235,
+          "sequence_03": 259,
+          "sequence_04": 335
+        },
+        "adaptive_observed": {
+          "sequence_00": 466,
+          "sequence_01": 435,
+          "sequence_02": 234,
+          "sequence_03": 259,
+          "sequence_04": 335
+        },
+        "adaptive_quality": {
+          "sequence_00": 486,
+          "sequence_01": 468,
+          "sequence_02": 237,
+          "sequence_03": 263,
+          "sequence_04": 335
+        }
+      }
+    },
+    "total_full_sequence_replays": 21,
+    "total_processed_frame_steps": 71736,
+    "new_YOLO_inferences": 0,
+    "CPU": "OpenCV/NumPy/SciPy replay only; model inference device not applicable; no fake FPS",
+    "scoring": "pinned pycocotools2.0.11 standard bbox maxDets=[1,10,100], same normalization/crowd policy as Phase1",
+    "manual_audit_maximum": 100,
+    "manual_audit_context": "at most five adjacent frames/case; no extra model inference",
+    "extra_scope": "synthetic cache/wrapper/scoring validation after approval, plus recording overhead timing; cached performance is not deployed pipeline FPS",
+    "uniform_control_note": "Two predetermined phases per budget; archive-derived B is an offline diagnostic control, not a deployable online scheduler or evidence of matched wall time."
+  },
+  "conditional_not_in_initial_approval": {
+    "D_resolution": {
+      "frames": 320,
+      "manifest": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/conditional_resolution_manifest.json",
+      "imgsz": [
+        640,
+        960
+      ],
+      "new_measured_YOLO_inferences": 640,
+      "device": "cpu, FP32 for source-comparable controlled diagnostic",
+      "conf": 0.001,
+      "NMS_IoU": 0.7,
+      "max_det": 300,
+      "warmup_full_calls": 6,
+      "raw_80_class_output": "observe after NMS before LUT, log saturation; no changed truncation or NMS"
+    },
+    "E_live_timing": {
+      "requires_new_approved_spec_after_cached_results": true,
+      "purpose": "measure total processing cost of chosen controls, actual YOLO and same device; no cached-FPS substitution"
+    }
+  },
+  "outputs": "separate per-arm COCO exports, logs, official matches incl GT IDs, tracker admission/recovery/visibility events, pre-FULL shadow output where genuine, size/confidence/age cohorts, CPU component times and diagnostic overhead, source/config/input hashes",
+  "no_new_policy_or_Phase3": "No learned scheduler, new birth logic, changed flow estimator, new tracker, ROI/camera/appearance/CLAHE sweep, training, dataset additions, commits or pushes"
+}

@@ -1,63 +1,130 @@
-# Python cache files
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
-.pytest_cache/
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
 # Virtual environments
 .venv/
 venv/
 env/
 ENV/
+env.bak/
+venv.bak/
+
+# Environment variables, credentials, and secrets
 .env
+.env.*
+*.env
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+*.p12
+id_rsa
+id_rsa.pub
 
 # macOS system files
 .DS_Store
+.AppleDouble
+.LSOverride
+Icon
 ._*
-Thumbs.db
 
-# Downloaded model weights
+# Windows system files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux temporary files
+*~
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Unit test and coverage caches
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Model weights and serialized checkpoints (large binary files)
 weights/*
 *.pt
 *.pth
 *.onnx
 *.engine
 *.weights
+*.tflite
 
-# Video files under data/
-data/dev_videos/*
-data/bdd100k/*
+# Large compressed data archives
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# Video media files
 *.mp4
 *.avi
 *.mov
 *.mkv
 *.webm
 
-# Generated outputs
-data/outputs/*
+# Large numerical array dumps
+*.npz
+*.npy
+
+# Generated experiment runs, evaluations, and scratchpads
+runs/
+scratch/
+Stage3-Smoke/
+Prep-Data*/
+
+# Dataset and raw video data (excludes multi-gigabyte local downloads)
+data/*
+!data/.gitkeep
+
+# Benchmark evaluation image caches
+benchmarks/historical/old_425_image_evaluation/images/
+*.jpg
+*.jpeg
+*.png
 
 # Logs
 logs/*
 !logs/.gitkeep
 *.log
-
-# IDE files
-.vscode/
-.idea/
-runs/
-
-# Benchmark evaluation images
-benchmarks/historical/old_425_image_evaluation/images/
-*.jpg
-*.jpeg
-*.png
-*.pt
-
-# Experiment Data
-Prep-Data*/
-Stage3-Smoke/
-scratch/
 
 # Exceptions for authoritative models & artifacts
 !yolov8n.pt

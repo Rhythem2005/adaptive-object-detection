@@ -17,7 +17,8 @@ from .presets import PRESETS, SUITES
 COLS = ["preset", "mAP50", "mAP50-95", "precision", "recall", "precision@0.25", "recall@0.25",
         "SKIP_mAP50-95", "detector_skip_rate", "local_redetect_rate", "roi_confirm_rate", "tracking_only_rate",
         "gflops_fraction_of_baseline", "latency_mean_ms", "latency_p95_ms", "fps_end_to_end",
-        "cpu_ms_per_frame"]
+        "cpu_ms_per_frame", "macro_f1", "macro_f1@0.25", "verification_ms_mean",
+        "budget_overrun_frames", "local_cost_rejections"]
 
 
 def row(name, res):
@@ -43,6 +44,8 @@ def main():
     ap.add_argument("--max-frames", type=int)
     ap.add_argument("--set", nargs="*")
     ap.add_argument("--ap-protocol", choices=["current", "legacy"], default="current")
+    ap.add_argument("--hash-inputs", action="store_true", help="also hash image bytes (extra I/O outside pipeline timing)")
+    ap.add_argument("--save-preds", action="store_true", help="save boxes and row-aligned temporal diagnostics")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     from ..evaluation import evaluator
@@ -56,7 +59,7 @@ def main():
         print(f"== {name}")
         cfg = build_config(name, a.set)
         res, det = run_sequences(cfg, seqs, os.path.join(a.out, name), detector=det,
-                                 max_frames=a.max_frames, log_every=0)
+                                 max_frames=a.max_frames, log_every=0, hash_inputs=a.hash_inputs, save_preds=a.save_preds)
         rows.append(row(name, res))
 
     os.makedirs(a.out, exist_ok=True)

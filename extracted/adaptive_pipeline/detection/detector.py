@@ -8,18 +8,23 @@ ultralytics' 'inference-only' speed figure.
 """
 import math
 import time
+from pathlib import Path
 from typing import List, Tuple
 
 import numpy as np
 
 from ..shared.boxes import EMPTY
+from ..evaluation.provenance import sha256_file
 
 
 class YOLODetector:
     def __init__(self, cfg):
         from ultralytics import YOLO
         self.cfg = cfg
+        weights = Path(cfg.model_path)
+        before_load = sha256_file(weights) if weights.is_file() else None
         self.model = YOLO(cfg.model_path)
+        self.checkpoint_sha256 = before_load or (sha256_file(weights) if weights.is_file() else None)
         n = len(self.model.names)
         if cfg.class_map is None:
             self.lut = None

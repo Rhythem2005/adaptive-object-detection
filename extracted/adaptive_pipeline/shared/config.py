@@ -104,6 +104,97 @@ class PipelineConfig:
     flow_fb_max: float = 1.5              # forward-backward error (flow px)
     flow_min_points: int = 4
 
+    # Experimental improvements are opt-in. Existing presets remain controls.
+    observation_anchoring: bool = False
+    quality_aware_flow: bool = False
+    flow_point_mode: str = "grid"       # "grid" | "corners"
+    flow_min_valid_fraction: float = 0.50
+    flow_min_spread: float = 0.10        # valid-point span area / box area
+    flow_max_dispersion: float = 0.20   # median motion residual / box diagonal
+    flow_r_min: float = 1.0
+    flow_r_max: float = 16.0
+    quality_conf_decay: bool = False
+    reliable_decay_floor: float = 0.25  # still decay even with reliable flow
+    low_score_association: bool = False
+    association_low_conf: float = 0.10
+    # Phase 3 opt-ins. None preserves the original shared-threshold behaviour.
+    track_birth_conf: Optional[float] = None
+    low_association_iou: Optional[float] = None
+    low_association_visible_only: bool = False
+    threshold_aware_assignment: bool = False
+
+    controller_mode: str = "legacy"     # "legacy" | "risk"
+    adaptive_min_interval: int = 2
+    risk_flow_quality: float = 0.50
+    risk_uncertainty: float = 0.15       # normalized position/size std
+    risk_innovation: float = 0.35        # normalized flow/prediction disagreement
+    risk_refresh: float = 0.70
+    detector_budget_fraction: float = 0.55  # soft rolling detector budget
+    budget_window: int = 60
+
+    local_cost_gate: bool = False
+    local_max_crops: int = 1
+    local_max_cost_fraction: float = 0.60
+    local_cost_margin: float = 0.10
+    local_success_prior: float = 0.65   # unvalidated prior, not a measured rate
+    local_prior_strength: float = 4.0
+    dynamic_roi_margin: bool = False
+    local_births: bool = False
+    local_birth_conf: float = 0.65
+    local_max_births: int = 2
+
+    motion_compensation: bool = False
+    motion_max_points: int = 128
+    motion_min_points: int = 12
+    motion_min_inlier_fraction: float = 0.60
+    motion_min_coverage: float = 0.60
+    appearance_verification: bool = False
+    appearance_max_tracks: int = 8
+    appearance_patch_size: int = 32
+    appearance_min_correlation: float = 0.50
+
+    def __post_init__(self):
+        if self.controller_mode not in ("legacy", "risk"):
+            raise ValueError("controller_mode must be legacy or risk")
+        if self.flow_point_mode not in ("grid", "corners"):
+            raise ValueError("flow_point_mode must be grid or corners")
+        if self.controller_mode == "risk" and not 1 <= self.adaptive_min_interval <= self.k_max:
+            raise ValueError("adaptive_min_interval must be between 1 and k_max")
+        if self.budget_window < 1 or not 0 < self.detector_budget_fraction <= 1:
+            raise ValueError("invalid detector budget")
+        if not 0 <= self.local_success_prior <= 1 or self.local_prior_strength <= 0:
+            raise ValueError("invalid LOCAL success prior")
+        if self.local_max_crops < 1 or not 0 < self.local_max_cost_fraction <= 1:
+            raise ValueError("invalid LOCAL cost limit")
+        if not 0 <= self.reliable_decay_floor <= 1:
+            raise ValueError("reliable_decay_floor must be in [0, 1]")
+        if not 0 < self.flow_r_min <= self.flow_r_max:
+            raise ValueError("invalid flow measurement-noise range")
+        if self.appearance_patch_size < 2 or self.appearance_max_tracks < 1:
+            raise ValueError("invalid appearance verification limits")
+        if self.motion_min_points < 3 or self.motion_max_points < self.motion_min_points:
+            raise ValueError("invalid background feature limits")
+        if self.flow_grid < 2 or not 0 < self.flow_min_points <= self.flow_grid ** 2:
+            raise ValueError("invalid flow point budget")
+        if self.flow_fb_max <= 0 or self.flow_max_dispersion <= 0:
+            raise ValueError("flow error limits must be positive")
+        if self.risk_uncertainty <= 0 or self.risk_innovation <= 0 or self.risk_refresh <= 0:
+            raise ValueError("risk normalizers must be positive")
+        for name in ("flow_min_valid_fraction", "flow_min_spread", "risk_flow_quality",
+                     "motion_min_inlier_fraction", "motion_min_coverage", "local_birth_conf"):
+            if not 0 <= getattr(self, name) <= 1:
+                raise ValueError(f"{name} must be in [0, 1]")
+        if not -1 <= self.appearance_min_correlation <= 1 or self.local_max_births < 0:
+            raise ValueError("invalid appearance correlation or birth budget")
+        if not 0 <= self.association_low_conf <= self.track_min_conf or self.local_cost_margin < 0:
+            raise ValueError("invalid association confidence or LOCAL cost margin")
+        for name in ("track_birth_conf", "low_association_iou"):
+            value = getattr(self, name)
+            if value is not None and not 0 <= value <= 1:
+                raise ValueError(f"{name} must be None or in [0, 1]")
+        if not 0 < self.conf_decay <= 1:
+            raise ValueError("conf_decay must be in (0, 1]")
+
     def with_overrides(self, **kw) -> "PipelineConfig":
         unknown = set(kw) - set(asdict(self))
         if unknown:

@@ -47,6 +47,39 @@ def match_predictions(pred_cls, true_cls, iou):
     return correct
 
 
+def match_ignored(preds, correct, regions):
+    """Ignore only unmatched predictions, separately at each IoU threshold.
+
+    Regions are cls,xyxy,iscrowd. Crowds use intersection / prediction area
+    and allow many matches; explicit non-crowd ignore boxes use one-to-one IoU.
+    Regular target matching remains the repository's existing IoU-greedy rule.
+    This extension does not turn that rule into the official COCO evaluator.
+    """
+    ignored = np.zeros_like(correct, bool)
+    if regions is None or not len(regions) or not len(preds):
+        return ignored
+    overlap = iou_matrix(regions[:, 1:5], preds[:, :4])
+    crowd = regions[:, 5].astype(bool)
+    if crowd.any():
+        lo = np.maximum(regions[crowd, None, 1:3], preds[None, :, :2])
+        hi = np.minimum(regions[crowd, None, 3:5], preds[None, :, 2:4])
+        inter = np.maximum(hi - lo, 0).prod(2)
+        area = np.maximum(preds[:, 2:4] - preds[:, :2], 0).prod(1)
+        overlap[crowd] = inter / np.maximum(area[None, :], 1e-16)
+    overlap *= regions[:, None, 0] == preds[None, :, 5]
+    for j, threshold in enumerate(IOUV):
+        used = np.zeros(len(regions), bool)
+        for p in np.argsort(-preds[:, 4], kind="stable"):
+            if correct[p, j]:
+                continue
+            candidates = np.flatnonzero((overlap[:, p] >= threshold) & (~used | crowd))
+            if len(candidates):
+                g = candidates[np.argmax(overlap[candidates, p])]
+                ignored[p, j] = True
+                used[g] = True
+    return ignored
+
+
 def _smooth(y, f=0.05):
     nf = round(len(y) * f * 2) // 2 + 1
     p = np.ones(nf // 2)
@@ -73,9 +106,10 @@ def _compute_ap(recall, precision):
     return trapz(np.interp(x, mrec, mpre), x)
 
 
-def ap_per_class(tp, conf, pred_cls, target_cls, fixed_conf=0.25, eps=1e-16):
+def ap_per_class(tp, conf, pred_cls, target_cls, fixed_conf=0.25, eps=1e-16, ignored=None):
     i = np.argsort(-conf)
     tp, conf, pred_cls = tp[i], conf[i], pred_cls[i]
+    ignored = np.zeros_like(tp, bool) if ignored is None else ignored[i]
     unique, nt = np.unique(target_cls, return_counts=True)
     nc = len(unique)
     x = np.linspace(0, 1, 1000)
@@ -86,14 +120,18 @@ def ap_per_class(tp, conf, pred_cls, target_cls, fixed_conf=0.25, eps=1e-16):
         m = pred_cls == c
         if m.sum() == 0 or nt[ci] == 0:
             continue
-        fpc = (1 - tp[m]).cumsum(0)
+        fpc = ((1 - tp[m]) * ~ignored[m]).cumsum(0)
         tpc = tp[m].cumsum(0)
         recall = tpc / (nt[ci] + eps)
-        precision = tpc / (tpc + fpc)
-        r_curve[ci] = np.interp(-x, -conf[m], recall[:, 0], left=0)
-        p_curve[ci] = np.interp(-x, -conf[m], precision[:, 0], left=1)
+        precision = tpc / np.maximum(tpc + fpc, eps)
+        valid = ~ignored[m, 0]
+        if valid.any():
+            r_curve[ci] = np.interp(-x, -conf[m][valid], recall[valid, 0], left=0)
+            p_curve[ci] = np.interp(-x, -conf[m][valid], precision[valid, 0], left=1)
         for j in range(tp.shape[1]):
-            ap[ci, j] = _compute_ap(recall[:, j], precision[:, j])
+            valid = ~ignored[m, j]
+            if valid.any():
+                ap[ci, j] = _compute_ap(recall[valid, j], precision[valid, j])
     f1 = 2 * p_curve * r_curve / (p_curve + r_curve + eps)
     k = int(_smooth(f1.mean(0), 0.1).argmax())
     kf = int(np.searchsorted(x, fixed_conf))
@@ -107,8 +145,9 @@ class DetectionEvaluator:
     def __init__(self, names):
         self.names = names
         self.tp, self.conf, self.pcls, self.tcls, self.tags = [], [], [], [], []
+        self.ignored = []
 
-    def add(self, preds, gts, tags=None):
+    def add(self, preds, gts, tags=None, ignored_regions=None):
         """preds (N,6) xyxy,conf,cls ; gts (M,5) cls,xyxy (pixels)."""
         n = len(preds)
         tcls = gts[:, 0].astype(int)
@@ -118,7 +157,9 @@ class DetectionEvaluator:
             tp = np.zeros((n, len(IOUV)), bool)
         else:
             tp = match_predictions(preds[:, 5].astype(int), tcls, iou_matrix(gts[:, 1:5], preds[:, :4]))
+        ignored = match_ignored(preds, tp, ignored_regions)
         self.tp.append(tp)
+        self.ignored.append(ignored)
         self.conf.append(preds[:, 4].astype(np.float32))
         self.pcls.append(preds[:, 5].astype(int))
         self.tcls.append(tcls)
@@ -130,6 +171,7 @@ class DetectionEvaluator:
         n_gt = np.array([len(t) for t in self.tcls])
         np.savez_compressed(
             path, tp=np.concatenate(self.tp) if self.tp else np.zeros((0, 10), bool),
+            ignored=np.concatenate(self.ignored),
             conf=np.concatenate(self.conf), pcls=np.concatenate(self.pcls), tcls=np.concatenate(self.tcls),
             n_pred=n_pred, n_gt=n_gt,
             video=np.array([t.get("video", "") for t in self.tags]),
@@ -144,14 +186,19 @@ class DetectionEvaluator:
             return None
         res = ap_per_class(np.concatenate([self.tp[i] for i in idx]),
                            np.concatenate([self.conf[i] for i in idx]),
-                           np.concatenate([self.pcls[i] for i in idx]), tcls)
+                           np.concatenate([self.pcls[i] for i in idx]), tcls,
+                           ignored=np.concatenate([self.ignored[i] for i in idx]))
         ap = res["ap"]
         return {
             "images": len(idx), "instances": int(len(tcls)),
             "precision": float(res["p"].mean()), "recall": float(res["r"].mean()),
+            "macro_f1": float(np.mean(2 * res["p"] * res["r"] / (res["p"] + res["r"] + 1e-16))),
             "mAP50": float(ap[:, 0].mean()), "mAP50-95": float(ap.mean()),
             "precision@0.25": float(res["p_fixed"].mean()), "recall@0.25": float(res["r_fixed"].mean()),
+            "macro_f1@0.25": float(np.mean(2 * res["p_fixed"] * res["r_fixed"] /
+                                          (res["p_fixed"] + res["r_fixed"] + 1e-16))),
             "best_f1_conf": res["best_conf"],
+            "ignored_predictions_at_iou50": int(sum(self.ignored[i][:, 0].sum() for i in idx)),
             "per_class_AP50-95": {self.names[c] if c < len(self.names) else str(c): float(ap[i].mean())
                                   for i, c in enumerate(res["classes"])},
         }
@@ -159,7 +206,8 @@ class DetectionEvaluator:
 
 # ── paired bootstrap over videos ────────────────────────────────────────────
 def _load_stats(path):
-    z = np.load(path)
+    with np.load(path) as archive:
+        z = {key: archive[key] for key in archive.files}
     po = np.concatenate([[0], np.cumsum(z["n_pred"])])
     go = np.concatenate([[0], np.cumsum(z["n_gt"])])
     vids = z["video"]
@@ -172,7 +220,8 @@ def _load_stats(path):
 def _map_for_images(z, po, go, imgs):
     pi = np.concatenate([np.arange(po[i], po[i + 1]) for i in imgs])
     gi = np.concatenate([np.arange(go[i], go[i + 1]) for i in imgs])
-    r = ap_per_class(z["tp"][pi], z["conf"][pi], z["pcls"][pi], z["tcls"][gi])
+    r = ap_per_class(z["tp"][pi], z["conf"][pi], z["pcls"][pi], z["tcls"][gi],
+                     ignored=z["ignored"][pi] if "ignored" in z else None)
     return r["ap"][:, 0].mean(), r["ap"].mean()
 
 
@@ -181,7 +230,12 @@ def paired_bootstrap(stats_a, stats_b, n_boot=200, seed=0):
     (frames within a video are not independent)."""
     za, poa, goa, va = _load_stats(stats_a)
     zb, pob, gob, vb = _load_stats(stats_b)
+    for key in ("video", "n_gt", "tcls"):
+        if not np.array_equal(za[key], zb[key]):
+            raise ValueError(f"Paired runs do not contain identical ordered evaluation targets: {key}")
     vids = sorted(set(va) & set(vb))
+    if not vids:
+        raise ValueError("No paired videos available")
     rng = np.random.default_rng(seed)
     point_a = _map_for_images(za, poa, goa, [i for v in vids for i in va[v]])
     point_b = _map_for_images(zb, pob, gob, [i for v in vids for i in vb[v]])

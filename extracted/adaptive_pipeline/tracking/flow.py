@@ -2,7 +2,7 @@
 
 Why: a driving camera moves, so object motion between frames is dominated
 by ego-motion and perspective scaling; a constant-velocity Kalman prior
-alone drifts within a few frames. Pyramidal LK on a 5x5 grid per box,
+    alone drifts within a few frames. Pyramidal LK on a configurable grid,
 filtered by forward-backward error, gives a measured displacement and
 scale change at ~1-3 ms/frame at 640 px width on CPU, and -- importantly
 -- a per-track reliability signal (fraction of points that survive the
@@ -18,6 +18,7 @@ class FlowPropagator:
     def __init__(self, cfg):
         self.cfg = cfg
         self.lk = dict(winSize=(cfg.flow_win, cfg.flow_win), maxLevel=cfg.flow_levels, criteria=_CRIT)
+        self.diagnostics = {}
 
     def prepare(self, frame):
         h, w = frame.shape[:2]
@@ -32,6 +33,7 @@ class FlowPropagator:
         ok = np.zeros(n, bool)
         quality = np.zeros(n, np.float32)
         if n == 0 or prev_gray is None:
+            self.diagnostics = {}
             return new, ok, quality
 
         g = self.cfg.flow_grid
@@ -44,17 +46,46 @@ class FlowPropagator:
         px = np.repeat(gx, g, axis=1)                # (N,g*g)
         py = np.tile(gy, (1, g))
         p0 = np.stack([px.ravel(), py.ravel()], 1).astype(np.float32).reshape(-1, 1, 2)
+        point_mask = np.ones((n, g * g), bool)
+        if self.cfg.flow_point_mode == "corners":
+            points = p0.reshape(n, g * g, 2)
+            point_mask[:] = False
+            ph, pw = prev_gray.shape
+            for i, box in enumerate(b):
+                x1, y1 = np.maximum(np.floor(box[:2]).astype(int), 0)
+                x2, y2 = np.minimum(np.ceil(box[2:]).astype(int), [pw, ph])
+                if x2 - x1 < 3 or y2 - y1 < 3:
+                    continue
+                corners = cv2.goodFeaturesToTrack(prev_gray[y1:y2, x1:x2], maxCorners=g*g,
+                                                  qualityLevel=0.01, minDistance=3, blockSize=3)
+                if corners is not None:
+                    count = len(corners)
+                    points[i, :count] = corners[:, 0] + [x1, y1]
+                    point_mask[i, :count] = True
+            p0 = points.reshape(-1, 1, 2)
 
+        def failed():
+            self.diagnostics = {"valid_fraction": quality.copy(), "fb_error": np.full(n, np.inf),
+                                "spread": np.zeros(n), "dispersion": np.full(n, np.inf)}
+            return new, ok, quality
+        if prev_gray.shape != gray.shape:
+            return failed()
         p1, st1, _ = cv2.calcOpticalFlowPyrLK(prev_gray, gray, p0, None, **self.lk)
+        if p1 is None or st1 is None:
+            return failed()
         pb, st2, _ = cv2.calcOpticalFlowPyrLK(gray, prev_gray, p1, None, **self.lk)
+        if pb is None or st2 is None:
+            return failed()
         fb = np.linalg.norm((p0 - pb).reshape(-1, 2), axis=1)
         valid = ((st1.ravel() == 1) & (st2.ravel() == 1) & (fb <= self.cfg.flow_fb_max)).reshape(n, g * g)
+        valid &= point_mask
         p0 = p0.reshape(n, g * g, 2).astype(np.float64)
         p1 = p1.reshape(n, g * g, 2).astype(np.float64)
         H, W = gray.shape
 
         k = valid.sum(1)
-        quality = (k / (g * g)).astype(np.float32)
+        # Legacy grid quality remains byte-compatible; corners use available points.
+        quality = (k / np.maximum(point_mask.sum(1), 1)).astype(np.float32)
         enough = k >= self.cfg.flow_min_points
 
         # median displacement and median scale (distance-to-centroid ratio),
@@ -76,6 +107,26 @@ class FlowPropagator:
         cy = (b[:, 1] + b[:, 3]) / 2 + np.nan_to_num(d[:, 1])
         inside = (cx >= 0) & (cx < W) & (cy >= 0) & (cy < H)
         ok = enough & inside
+        if self.cfg.quality_aware_flow:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", RuntimeWarning)
+                fb_median = np.nanmedian(np.where(valid, fb.reshape(n, g*g), np.nan), axis=1)
+                lo = np.nanmin(np.where(valid[..., None], p0, np.nan), axis=1)
+                hi = np.nanmax(np.where(valid[..., None], p0, np.nan), axis=1)
+                spread = np.prod(np.maximum(hi - lo, 0), axis=1) / np.maximum(w[:, 0] * h[:, 0], 1)
+                residual = np.linalg.norm((p1 - p0) - d[:, None, :], axis=2)
+                dispersion = np.nanmedian(np.where(valid, residual, np.nan), axis=1) / np.maximum(np.hypot(w[:, 0], h[:, 0]), 1)
+            ok &= (quality >= self.cfg.flow_min_valid_fraction) & (spread >= self.cfg.flow_min_spread)
+            ok &= np.isfinite(d).all(axis=1) & (dispersion <= self.cfg.flow_max_dispersion)
+            fb_trust = np.clip(1 - np.nan_to_num(fb_median, nan=self.cfg.flow_fb_max) / self.cfg.flow_fb_max, 0, 1)
+            spread_trust = np.clip(np.nan_to_num(spread) / max(0.25, self.cfg.flow_min_spread), 0, 1)
+            coherence = np.clip(1 - np.nan_to_num(dispersion, nan=self.cfg.flow_max_dispersion) / self.cfg.flow_max_dispersion, 0, 1)
+            self.diagnostics = {"valid_fraction": quality.copy(), "fb_error": fb_median,
+                                "spread": spread, "dispersion": dispersion}
+            quality = (quality * fb_trust * spread_trust * coherence).astype(np.float32)
+            quality[~ok] = 0
+        else:
+            self.diagnostics = {"valid_fraction": quality.copy()}
         nw, nh = w[:, 0] * s, h[:, 0] * s
         prop = np.stack([cx - nw / 2, cy - nh / 2, cx + nw / 2, cy + nh / 2], 1) / scale
         new[ok] = prop[ok]

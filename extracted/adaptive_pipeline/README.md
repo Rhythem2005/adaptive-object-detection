@@ -1,5 +1,11 @@
 # Adaptive Vision — detector scheduling for driving video
 
+Opt-in improvements are documented in [the implementation guide](../../docs/ADAPTIVE_IMPROVEMENTS.md).
+They have passed synthetic correctness checks but have not been evaluated on the
+dataset. Obtain explicit user approval before dataset or real-video execution.
+The original presets below remain experiment controls; the root README is the
+current result summary.
+
 Research question: **how much full-frame YOLOv8n computation can be replaced by
 temporal propagation, and at what cost in detection quality — and does an
 adaptive schedule beat a fixed one at the same compute?**
@@ -144,3 +150,13 @@ Efficiency fields: `detector_skip_rate` (frames without a full pass),
   into GPU latency savings. The target where skipping pays most is CPU/edge.
 * Propagated boxes are kept for at most `coast_max` frames after flow fails;
   thresholds are heuristic and must be tuned on val.
+
+## 8. Argoverse-HD export
+
+Use `python -m adaptive_pipeline.experiments.run_argoverse --dataset data/argoverse_hd --out <fresh-directory>`
+from the repository root with `PYTHONPATH=extracted`. The adapter reads native
+pixel annotations and the manifest, validates all images/order/boundaries,
+maps all eight classes, and handles crowd regions explicitly. It does not
+create pseudo-labels or change the original algorithm configurations.
+See [the protocol and exact commands](../../docs/ARGOVERSE_HD.md) and
+[measured results](../../docs/ARGOVERSE_HD_RESULTS.md).

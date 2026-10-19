@@ -13,6 +13,7 @@ all configurations and depends on storage, not on the method.
 import csv
 import os
 import resource
+import sys
 import time
 from collections import Counter
 
@@ -75,9 +76,19 @@ class Telemetry:
             "gflops_per_frame": gfl / n,
             "trigger_counts": dict(reasons),
             "cpu_ms_per_frame": 1000.0 * (time.process_time() - self._cpu0) / n,
-            "peak_rss_mb": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0,
+            "peak_rss_mb": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / (2 ** 20 if sys.platform == "darwin" else 1024.0),
+            "verification_ms_mean": float(np.mean([x.get("t_verification_ms", 0) for x in r])),
+            "budget_overrun_frames": sum(x.get("budget_overrun", 0) for x in r),
+            "budget_deferred_frames": sum(x.get("budget_deferred", 0) for x in r),
+            "local_cost_rejections": sum(any(reason in x["reasons"] for reason in
+                ("local_cost_limit", "local_low_success", "local_budget", "local_empty")) for x in r),
+            "appearance_checks": sum(x.get("appearance_checked", 0) for x in r),
+            "appearance_failures": sum(x.get("appearance_failed", 0) for x in r),
         }
-        if full_frame_gflops:
+        reference_cost = sum(x.get("full_reference_gflops", 0) for x in r)
+        if reference_cost:
+            s["gflops_fraction_of_baseline"] = gfl / reference_cost
+        elif full_frame_gflops:
             s["gflops_fraction_of_baseline"] = s["gflops_per_frame"] / full_frame_gflops
         if self._cuda:
             import torch

@@ -1,0 +1,2 @@
+# Optional dependency for scoring saved predictions with the COCO bbox protocol.
+pycocotools==2.0.11

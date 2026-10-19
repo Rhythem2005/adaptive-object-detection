@@ -1,0 +1,104 @@
+{
+  "C_fullfallback": {
+    "motion_by_decision_at_age1": {
+      "FULL": {
+        "frames": 122,
+        "GT_motion_median_normalized_diagonal": 0.04716075180305315,
+        "native_small_object_fraction_mean": 0.31916161349248545
+      },
+      "SKIP": {
+        "frames": 1608,
+        "GT_motion_median_normalized_diagonal": 0.0282483039111842,
+        "native_small_object_fraction_mean": 0.404909456592817
+      }
+    },
+    "skip_FP_candidates": {
+      "coarse_localisation": 665,
+      "wrong_class_overlap": 648,
+      "duplicate_or_matching_conflict": 194,
+      "background_or_stale_or_very_poor_localisation": 760
+    },
+    "age1_SKIP_signal_correlations": {
+      "GT_motion": {
+        "frames": 1594,
+        "Spearman_rho_with_missing_TP_fraction": 0.1166023272117006
+      },
+      "novelty": {
+        "frames": 1594,
+        "Spearman_rho_with_missing_TP_fraction": 0.12412024306157919
+      },
+      "flow_quality_mean": {
+        "frames": 1588,
+        "Spearman_rho_with_missing_TP_fraction": 0.12669594740646017
+      }
+    }
+  },
+  "adaptive_observed": {
+    "motion_by_decision_at_age1": {
+      "FULL": {
+        "frames": 113,
+        "GT_motion_median_normalized_diagonal": 0.05576836181572427,
+        "native_small_object_fraction_mean": 0.3242043567730993
+      },
+      "SKIP": {
+        "frames": 1613,
+        "GT_motion_median_normalized_diagonal": 0.028212195821706344,
+        "native_small_object_fraction_mean": 0.40454077677104283
+      }
+    },
+    "skip_FP_candidates": {
+      "coarse_localisation": 654,
+      "wrong_class_overlap": 664,
+      "duplicate_or_matching_conflict": 231,
+      "background_or_stale_or_very_poor_localisation": 765
+    },
+    "age1_SKIP_signal_correlations": {
+      "GT_motion": {
+        "frames": 1599,
+        "Spearman_rho_with_missing_TP_fraction": 0.10937725689532872
+      },
+      "novelty": {
+        "frames": 1599,
+        "Spearman_rho_with_missing_TP_fraction": 0.11846215526898259
+      },
+      "flow_quality_mean": {
+        "frames": 1593,
+        "Spearman_rho_with_missing_TP_fraction": 0.12793919668002013
+      }
+    }
+  },
+  "adaptive_quality": {
+    "motion_by_decision_at_age1": {
+      "FULL": {
+        "frames": 234,
+        "GT_motion_median_normalized_diagonal": 0.03313537164088591,
+        "native_small_object_fraction_mean": 0.3085011306261053
+      },
+      "SKIP": {
+        "frames": 1552,
+        "GT_motion_median_normalized_diagonal": 0.02821226619830642,
+        "native_small_object_fraction_mean": 0.4091813063833992
+      }
+    },
+    "skip_FP_candidates": {
+      "coarse_localisation": 627,
+      "wrong_class_overlap": 626,
+      "duplicate_or_matching_conflict": 215,
+      "background_or_stale_or_very_poor_localisation": 739
+    },
+    "age1_SKIP_signal_correlations": {
+      "GT_motion": {
+        "frames": 1538,
+        "Spearman_rho_with_missing_TP_fraction": 0.1114997218792408
+      },
+      "novelty": {
+        "frames": 1538,
+        "Spearman_rho_with_missing_TP_fraction": 0.13189548205737536
+      },
+      "flow_quality_mean": {
+        "frames": 1531,
+        "Spearman_rho_with_missing_TP_fraction": 0.061314809139384245
+      }
+    }
+  }
+}

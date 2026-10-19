@@ -18,6 +18,7 @@ The current implementation uses **stock YOLOv8n** and a modular evaluation harne
 - [Evaluation protocol and outputs](#evaluation-protocol-and-outputs)
 - [Repository structure](#repository-structure)
 - [Prototype status and next steps](#prototype-status-and-next-steps)
+- [Experimental improvements awaiting evaluation](#experimental-improvements-awaiting-evaluation)
 
 ## Project objectives
 
@@ -234,6 +235,14 @@ python -m pip install -r requirements.txt
 
 The inspected local environment uses Python **3.14.6**, PyTorch **2.14.0**, and Ultralytics **8.4.149**. [`requirements.txt`](requirements.txt) pins the main Python packages; it does not independently pin PyTorch or the entire transitive environment. Record the actual environment and selected device with each experiment.
 
+### Run the test suite
+
+Validate system functionality and correctness checks across all components:
+
+```bash
+PYTHONPATH=extracted python -m unittest discover tests
+```
+
 The commands below run from the repository root. `PYTHONPATH=extracted` makes the active package available without changing directories. Data must be provisioned locally; cloning the repository does not download the prepared dataset. Confirm that `yolov8n.pt` is available before starting inference.
 
 ### Prepare the input layout
@@ -431,3 +440,30 @@ Use the modular package commands above for current work. The root `main.py` depe
 The next research priorities are to validate annotation provenance with independent human labels, improve propagated-box accuracy, reduce failed LOCAL work, and compare frozen adaptive and fixed policies on the same held-out test set. Deployment work should measure total wall-clock latency, frame age, buffer replacements, and actual resource consumption on the intended device.
 
 This repository is a working research prototype. Its strongest current result is a measured reduction in detector work, accompanied by a quantified loss in detection accuracy and a competitive fixed-scheduling baseline.
+
+## Experimental improvements awaiting evaluation
+
+An opt-in implementation now adds observation-anchored prediction, flow-quality
+feedback, risk-aware refresh decisions, a soft detector budget, and cost-gated
+LOCAL confirmation. Optional variants cover confidence decay, low-score
+association, background-aligned novelty, appearance verification, and bounded
+LOCAL births. Original presets remain comparison controls.
+
+**These changes have not been evaluated on the dataset. The results above belong
+to the existing experiments and do not demonstrate improvement from the new code.**
+Synthetic tests check correctness using generated inputs and a fake detector.
+Dataset and real-video execution require explicit user approval.
+
+See [the implementation and evaluation guide](docs/ADAPTIVE_IMPROVEMENTS.md) for
+the new presets, ablation suites, unvalidated settings, test command and proposed
+first experiment. New runs protect existing outputs, validate labels, record
+input/weight provenance and include per-class Macro F1 summaries. Optional saved
+prediction diagnostics support later geometry analysis.
+
+## Argoverse-HD provided-annotation benchmark
+
+The local five-sequence Argoverse-HD export is supported through a strict,
+read-only native annotation adapter. See [the integration and execution guide](docs/ARGOVERSE_HD.md)
+for class mapping, crowd handling, validation, frozen configurations and commands.
+The [measured benchmark report](docs/ARGOVERSE_HD_RESULTS.md) uses the provided
+dataset annotations; its scores are separate from earlier YOLO pseudo-label results.

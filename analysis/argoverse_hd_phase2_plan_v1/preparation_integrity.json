@@ -1,0 +1,12 @@
+{
+  "kind": "preparation_integrity_only_not_experiment",
+  "existing_evidence_files_unchanged": 71,
+  "original_snapshot_Python_files_unchanged": 35,
+  "plan_references_resolve": true,
+  "planned_replay_passes": 21,
+  "planned_frame_steps": 71736,
+  "new_YOLO_inferences_authorized_or_run": 0,
+  "approval_status": "awaiting_user",
+  "execution_output_root_exists": false,
+  "report_sha256": "28481c80669fc5087532c4e2f6d9a36186ef63f5b619c7ffd756405f5f596951"
+}

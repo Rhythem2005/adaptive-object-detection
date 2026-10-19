@@ -41,15 +41,15 @@ INVALID BOUNDING BOXES:
   None
 
 DUPLICATE/SUSPICIOUS ANNOTATIONS:
-  /Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/Prep-Data/labels/val/day_901_f000231.txt:1: Box covers almost entire image (w=1.00, h=0.99)
-  /Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/Prep-Data/labels/val/day_901_f000219.txt:1: Box covers almost entire image (w=0.99, h=0.99)
-  /Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/Prep-Data/labels/val/day_901_f000205.txt:1: Box covers almost entire image (w=0.99, h=0.99)
-  /Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/Prep-Data/labels/val/day_901_f000229.txt:1: Box covers almost entire image (w=1.00, h=0.99)
-  /Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/Prep-Data/labels/val/day_901_f000230.txt:1: Box covers almost entire image (w=1.00, h=0.99)
-  /Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/Prep-Data/labels/val/day_901_f000216.txt:1: Box covers almost entire image (w=1.00, h=0.99)
-  /Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/Prep-Data/labels/val/day_901_f000217.txt:1: Box covers almost entire image (w=1.00, h=0.99)
-  /Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/Prep-Data/labels/test/day_810_f000062.txt:3: Box covers almost entire image (w=0.99, h=0.98)
-  /Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/Prep-Data/labels/test/day_810_f000103.txt:1: Box covers almost entire image (w=1.00, h=0.98)
+  Prep-Data/labels/val/day_901_f000231.txt:1: Box covers almost entire image (w=1.00, h=0.99)
+  Prep-Data/labels/val/day_901_f000219.txt:1: Box covers almost entire image (w=0.99, h=0.99)
+  Prep-Data/labels/val/day_901_f000205.txt:1: Box covers almost entire image (w=0.99, h=0.99)
+  Prep-Data/labels/val/day_901_f000229.txt:1: Box covers almost entire image (w=1.00, h=0.99)
+  Prep-Data/labels/val/day_901_f000230.txt:1: Box covers almost entire image (w=1.00, h=0.99)
+  Prep-Data/labels/val/day_901_f000216.txt:1: Box covers almost entire image (w=1.00, h=0.99)
+  Prep-Data/labels/val/day_901_f000217.txt:1: Box covers almost entire image (w=1.00, h=0.99)
+  Prep-Data/labels/test/day_810_f000062.txt:3: Box covers almost entire image (w=0.99, h=0.98)
+  Prep-Data/labels/test/day_810_f000103.txt:1: Box covers almost entire image (w=1.00, h=0.98)
 
 SPLIT LEAKAGE:
   None

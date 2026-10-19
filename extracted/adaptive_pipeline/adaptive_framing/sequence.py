@@ -17,6 +17,10 @@ class Sequence:
     name: str
     frames: List[str]
     labels: Optional[List[str]] = None
+    # Native pixel targets: each row is cls,x1,y1,x2,y2. Ignored rows add iscrowd.
+    targets: Optional[list] = None
+    ignored: Optional[list] = None
+    image_ids: Optional[list] = None
 
 
 def img2label_path(p: str) -> str:
