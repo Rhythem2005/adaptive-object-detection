@@ -1,0 +1,92 @@
+{
+  "status": "PROPOSED_AWAITING_APPROVAL",
+  "prepared_on": "2026-10-20",
+  "preparation_only": true,
+  "no_inference_scoring_tests_or_replays_run": true,
+  "phase4_started": false,
+  "practical_reference": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/runs/argoverse_hd_next_research_v1/candidate_config.json",
+  "practical_reference_sha256": "0832807da406310045359d6f5c78a6b15394e7e27c0b45270bc8f70ae4ec8edb",
+  "weights_sha256": "f59b3d833e2ff32e194b5bb8e08d211dc7c5bdf144b90d2c8412c47ccfc83b36",
+  "D": {
+    "manifest": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/analysis/argoverse_hd_phase2_plan_v1/conditional_resolution_manifest.json",
+    "manifest_sha256": "619c9a9644d93c7c7e657dcc0db587bbddb138029c56561fc7e3fec2779ea1b2",
+    "frames": 320,
+    "sizes": [
+      640,
+      960
+    ],
+    "primary_requests": 640,
+    "extra_canonical_observer_validation_requests": 20,
+    "explicit_full_frame_warmups": 6,
+    "total_planned_application_requests": 666,
+    "precap_shadow": "one640 native-NMS-survivor diagnostic score conditional on observer validation; no extra NMS/model call or production cap change"
+  },
+  "E": {
+    "frames_per_pass": 3416,
+    "methods": [
+      "Dense640",
+      "practical_fastpath",
+      "practical_without_fastpath",
+      "V1_weak_births_with_common_fastpath",
+      "strict_grid3_with_common_fastpath"
+    ],
+    "expected_AP_percent": [
+      15.732712799356447,
+      14.69224609316874,
+      14.69224609316874,
+      15.091065014903643,
+      14.68202550789239
+    ],
+    "calls_per_pass": [
+      3416,
+      1710,
+      1710,
+      1710,
+      1710
+    ],
+    "blocks": [
+      "ABDCE",
+      "BCEDA",
+      "CDAEB",
+      "DEBAC",
+      "EACBD"
+    ],
+    "full_sequence_passes": 25,
+    "processed_frames": 85400,
+    "measured_application_requests": 51280,
+    "explicit_full_frame_warmups": 75,
+    "total_planned_application_requests": 51355,
+    "common_fastpath_activation_must_reproduce_archived_outputs": true,
+    "no_cached_detection_substitution": true
+  },
+  "combined_planned_application_requests": 52021,
+  "framework_forwards_must_be_counted_separately": true,
+  "device": "CPU",
+  "precision": "FP32",
+  "batch": 1,
+  "conf": 0.001,
+  "NMS_iou": 0.7,
+  "global_max_det": 300,
+  "threads": {
+    "torch_intra_op": 8,
+    "torch_inter_op": 1,
+    "opencv": 10
+  },
+  "fresh_proposed_roots": [
+    "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/runs/argoverse_hd_detector_diagnosis_D_v1",
+    "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/runs/argoverse_hd_real_runtime_E_v1"
+  ],
+  "estimates_only": {
+    "D_minutes": [
+      2,
+      5
+    ],
+    "E_minutes": [
+      30,
+      60
+    ],
+    "E_planning_checkpoint_minutes": 90,
+    "combined_disk_budget_GB": 5
+  },
+  "plan_document": "/Users/rhythemsabharwalgmail.com/Desktop/MINOR-PROJECT/docs/DE_EXPERIMENT_PLAN.md"
+}

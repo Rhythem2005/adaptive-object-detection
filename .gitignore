@@ -110,6 +110,16 @@ runs/
 scratch/
 Stage3-Smoke/
 Prep-Data*/
+research_handoff/
+
+# Documents, presentations, and export binaries
+*.pdf
+*.docx
+*.doc
+*.pptx
+*.ppt
+*.xlsx
+*.xls
 
 # Dataset and raw video data (excludes multi-gigabyte local downloads)
 data/*

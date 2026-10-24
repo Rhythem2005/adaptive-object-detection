@@ -85,12 +85,17 @@ class AdaptivePipeline:
                          "lum": np.nan, "clahe": 0, "gflops": full_cost,
                          "full_reference_gflops": full_cost, "output_age_mean": 0.0}
         tw = c.thumb_w
-        th = int(round(H * tw / W))
-        small = cv2.resize(frame, (tw, th), interpolation=cv2.INTER_AREA)
-        lum = mean_lab_l(small)
-        thumb = cv2.GaussianBlur(cv2.cvtColor(small, cv2.COLOR_BGR2GRAY), (3, 3), 0)
         thumb_scale = tw / float(W)
-        self.illum.update(lum)
+        if c.fixed_signal_fastpath:
+            # Fixed decisions never consume these signals. Keep flow preparation
+            # below, including FULL frames used as the next SKIP's reference.
+            thumb, lum = None, np.nan
+        else:
+            th = int(round(H * tw / W))
+            small = cv2.resize(frame, (tw, th), interpolation=cv2.INTER_AREA)
+            lum = mean_lab_l(small)
+            thumb = cv2.GaussianBlur(cv2.cvtColor(small, cv2.COLOR_BGR2GRAY), (3, 3), 0)
+            self.illum.update(lum)
         gray = scale = None
         if temporal and (c.propagation == "flow" or c.motion_compensation or c.appearance_verification):
             gray, scale = self.flow.prepare(frame)

@@ -34,8 +34,18 @@ def main():
     for rel,digest in load(P2/'artifact_sha256.json').items():
         assert sha(P2/rel)==digest,rel
         prior_count+=1
+    phase1_count=0
+    for rel,digest in load(P1/'artifact_sha256.json').items():
+        assert sha(P1/rel)==digest,rel
+        phase1_count+=1
+    for path,digest in load(ROOT/'input_evidence.json')['source_sha256'].items():
+        assert sha(path)==digest,path
+    document_revision=load(ROOT/'document_portability_revision.json')['reports'] if (ROOT/'document_portability_revision.json').exists() else {}
     for path,digest in load(BASE/'analysis/argoverse_hd_phase2_plan_v1/source_sha256.json').items():
-        if path not in allowed:assert sha(path)==digest,path
+        if path in document_revision:
+            change=document_revision[path]
+            assert sha(change['original_copy'])==digest and sha(path)==change['current_sha256'],path
+        elif path not in allowed:assert sha(path)==digest,path
     for name,ref in REFS.items():
         new,old=ROOT/'arms'/name,P2/'B_tracking_factors'/ref
         for filename in ['preds.npz','prediction_details.npz']:equal_archives(new/filename,old/filename)
@@ -101,6 +111,8 @@ def main():
     verification={'three_controls_bitwise_predictions_details_states_official_tensors':True,
         'three_controls_aggregate_per_class_per_sequence_operating_metrics_exact':True,
         'prior_Phase2_artifact_hashes_unchanged':prior_count,
+        'prior_Phase1_artifact_hashes_unchanged':phase1_count,
+        'dataset_and_original_benchmark_evidence_hashes_unchanged':True,
         'other_original_production_files_unchanged':True,'intentionally_changed_production_files':changed,
         'all_FULL_predictions_equal_requested_bound_cache':True,'all_forced_schedules_followed':True,
         'fixed_phase_FULL_flow_bypassed':True,'timing_repeats_bitwise_output_detail_state_parity':True,
@@ -108,6 +120,7 @@ def main():
         'frame_steps':(len(specs)+len(timing['runs']))*3416,
         'simulated_FULL_cache_lookups':full_lookups,'new_YOLO_inferences':0,
         'D_E_Phase4_training_executed':False,'commit_or_push':False,
+        'external_document_portability_revision':bool(document_revision),
         'device':load(ROOT/'runtime.json'),'synthetic_tests_passed':True}
     dump(ROOT/'final_verification.json',verification)
     dump(ROOT/'COMPLETE.json',{'approved_Phase3_complete':True,'new_YOLO_inferences':0,

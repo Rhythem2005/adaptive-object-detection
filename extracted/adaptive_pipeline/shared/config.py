@@ -44,6 +44,7 @@ class PipelineConfig:
     # ── Scheduling policy ─────────────────────────────────────────────────
     policy: str = "adaptive"              # "always" | "fixed" | "adaptive"
     fixed_k: int = 4                      # fixed policy: FULL every k frames
+    fixed_signal_fastpath: bool = False   # omit unused thumbnail/illumination signals
     propagation: str = "flow"             # "flow" | "kalman" | "hold"
 
     k_max: int = 8                        # hard staleness bound (frames) [TUNE-ON-VAL]
@@ -154,6 +155,9 @@ class PipelineConfig:
     appearance_min_correlation: float = 0.50
 
     def __post_init__(self):
+        if self.fixed_signal_fastpath and (self.policy != "fixed" or self.use_clahe
+                or self.keyframe_refine or self.motion_compensation or self.appearance_verification):
+            raise ValueError("fixed_signal_fastpath requires fixed policy without image adaptation/verification")
         if self.controller_mode not in ("legacy", "risk"):
             raise ValueError("controller_mode must be legacy or risk")
         if self.flow_point_mode not in ("grid", "corners"):
